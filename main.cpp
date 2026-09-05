@@ -1,0 +1,20 @@
+#include <stdio.h>
+
+#include "command.h"
+
+int main()
+{
+
+    while (true)
+    {
+        Command curCommand = readCommand();
+
+        if(curCommand.readStatus == READ_SUCCESS)
+        {
+            runCommand(&curCommand);
+        }
+    }
+    
+
+}
+
