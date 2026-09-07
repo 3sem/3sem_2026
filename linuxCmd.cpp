@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 #include <assert.h>
+#include <stdio.h>
 
 int createPipe( int* fd)
 {

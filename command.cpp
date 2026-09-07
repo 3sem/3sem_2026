@@ -52,26 +52,35 @@ void runCommand( Command* command)
     int pipefd[2];
     createPipe(pipefd);
     pid_t newPid = 0;
-    for ( size_t curProcess = 0; curProcess < amountProcess; curProcess++ )
+    size_t curProcess = 0;
+    for (; curProcess < amountProcess; curProcess++ )
     {
-        if( curProcess < amountProcess )
+        if( curProcess < amountProcess - 1)
         {
+            printf("MEOW\n");
             newPid = fork();
 
             if( newPid )
             {
-                continue;
+                if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+                    perror("dup2");
+                }
+                close(pipefd[0]);
+                close(pipefd[1]);
+                break;
             }
             else{
-                dup2( pipefd[1], STDIN_FILENO)
+                if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+                    perror("dup2");
+                }
                 close(pipefd[0]);
                 close(pipefd[1]);
             }
         }
-
-        execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
     }
-
+    
+    printf("curProcess = %lu\n", curProcess);
+    execvp( commandArgv[curProcess - 1][0], commandArgv[curProcess - 1]);
 
     perror("execvp failure\n");
 }

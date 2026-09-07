@@ -1,7 +1,7 @@
 CXX := g++
 CXXFLAGS := -Wall -Wextra -g -fsanitize=address,undefined -fno-omit-frame-pointer
 TARGET := firstTask
-SOURCES := main.cpp command.cpp parser.cpp general.cpp
+SOURCES := main.cpp command.cpp parser.cpp general.cpp linuxCmd.cpp
 
 .PHONY: all clean
 
