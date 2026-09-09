@@ -26,23 +26,6 @@ void runCommand( Command* command)
 {
     assert(command);
 
-    const pid_t pid = fork();
-
-    if ( pid < 0)
-    {
-        printf("fork failed!\n");
-    }
-
-    if( pid )
-    {   
-        int processStatus = 0;
-        waitpid( pid, &processStatus, 0);
-
-        checkProcessStatus( processStatus);
-
-        return;
-    }
-
     size_t amountProcess = 0;
     char*** commandArgv = parseCommand( command->commandStr, &amountProcess);
     assert(commandArgv);
@@ -50,39 +33,115 @@ void runCommand( Command* command)
     dumpPipeline(commandArgv);
 
     int pipefd[2];
-    createPipe(pipefd);
     pid_t newPid = 0;
+    pid_t oldPid = 0;
     size_t curProcess = 0;
+    int fdIn = STDIN_FILENO;
+
+    fprintf(stderr, "amountProcess = %lu\n", amountProcess);
     for (; curProcess < amountProcess; curProcess++ )
     {
-        if( curProcess < amountProcess - 1)
+        if((curProcess == 0) && (curProcess + 1 != amountProcess))
         {
-            printf("MEOW\n");
-            newPid = fork();
+            createPipe(pipefd);
 
+            newPid = fork();
+            
             if( newPid )
+            {   
+                close(pipefd[0]);
+                close(pipefd[1]);
+                continue;
+            }
+            else if ( newPid == 0 )
             {
                 if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
                     perror("dup2");
                 }
                 close(pipefd[0]);
                 close(pipefd[1]);
-                break;
+
+                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
+                perror("execvp failure\n");
             }
-            else{
+            
+        }
+        else if ( (curProcess == 0) && (curProcess + 1 == amountProcess) )
+        {
+            newPid = fork();
+
+            if( newPid )
+            {
+                continue;
+            }
+            else if ( newPid == 0 )
+            {
+                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
+                perror("execvp failure\n");
+            }
+            
+        }
+        else if( (curProcess != 0) && (curProcess + 1 == amountProcess) )
+        {
+            createPipe(pipefd);
+
+            newPid = fork();
+
+            if( newPid )
+            {
+                close(pipefd[0]);
+                close(pipefd[1]);
+                continue;
+            }
+            else if ( newPid == 0 )
+            {
                 if (dup2(pipefd[0], STDIN_FILENO) == -1) {
                     perror("dup2");
                 }
                 close(pipefd[0]);
                 close(pipefd[1]);
+
+                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
+                perror("execvp failure\n");
             }
         }
-    }
-    
-    printf("curProcess = %lu\n", curProcess);
-    execvp( commandArgv[curProcess - 1][0], commandArgv[curProcess - 1]);
+        else if ( curProcess + 1 < amountProcess)
+        {
+            createPipe(pipefd);
 
-    perror("execvp failure\n");
+            newPid = fork();
+
+            if( newPid )
+            {
+                close(pipefd[1]);
+                if( curProcess > 0 )
+                {
+                    close(fdIn);
+                }
+                fdIn = pipefd[0];
+                continue;
+            }
+            else if ( newPid == 0 )
+            {
+
+
+
+                if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+                    perror("dup2");
+                }
+
+                if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+                    perror("dup2");
+                }
+                close(pipefd[0]);
+                close(pipefd[1]);
+
+                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
+                perror("execvp failure\n");
+            }
+        }
+        
+    }
 }
 
 static void checkProcessStatus( int processStatus)

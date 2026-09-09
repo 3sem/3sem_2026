@@ -13,6 +13,10 @@ int main()
         {
             runCommand(&curCommand);
         }
+        else
+        {
+            break;
+        }
     }
     
 
