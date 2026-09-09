@@ -4,17 +4,17 @@
 
 int main()
 {
-
-    while (true)
+    while ( true )
     {
         Command curCommand = readCommand();
 
-        if(curCommand.readStatus == READ_SUCCESS)
+        if( curCommand.readStatus == READ_SUCCESS )
         {
-            runCommand(&curCommand);
+            runCommand( &curCommand);
         }
         else
         {
+            fprintf( stderr, "parse command failure\n");
             break;
         }
     }

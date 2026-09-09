@@ -4,11 +4,12 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <malloc.h>
 
 #include <unistd.h>
 #include <sys/wait.h>
 
-static void checkProcessStatus( int processStatus);
+static void checkProcessStatus( int processStatus, pid_t pid);
 
 Command readCommand()
 {
@@ -30,89 +31,30 @@ void runCommand( Command* command)
     char*** commandArgv = parseCommand( command->commandStr, &amountProcess);
     assert(commandArgv);
 
-    dumpPipeline(commandArgv);
+    // dumpPipeline(commandArgv);
 
     int pipefd[2];
     pid_t newPid = 0;
-    pid_t oldPid = 0;
     size_t curProcess = 0;
     int fdIn = STDIN_FILENO;
 
-    fprintf(stderr, "amountProcess = %lu\n", amountProcess);
-    for (; curProcess < amountProcess; curProcess++ )
+    pid_t* processPids = (pid_t*) calloc( amountProcess, sizeof(pid_t));
+    assert(processPids);
+
+    for ( ; curProcess < amountProcess; curProcess++)
     {
-        if((curProcess == 0) && (curProcess + 1 != amountProcess))
+        if ( curProcess + 1 <= amountProcess )
         {
             createPipe(pipefd);
 
-            newPid = fork();
-            
-            if( newPid )
-            {   
-                close(pipefd[0]);
-                close(pipefd[1]);
-                continue;
+            newPid = forkProc();
+            if ( newPid < 0 ){
+                break;
             }
-            else if ( newPid == 0 )
-            {
-                if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
-                    perror("dup2");
-                }
-                close(pipefd[0]);
-                close(pipefd[1]);
-
-                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
-                perror("execvp failure\n");
-            }
-            
-        }
-        else if ( (curProcess == 0) && (curProcess + 1 == amountProcess) )
-        {
-            newPid = fork();
 
             if( newPid )
             {
-                continue;
-            }
-            else if ( newPid == 0 )
-            {
-                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
-                perror("execvp failure\n");
-            }
-            
-        }
-        else if( (curProcess != 0) && (curProcess + 1 == amountProcess) )
-        {
-            createPipe(pipefd);
-
-            newPid = fork();
-
-            if( newPid )
-            {
-                close(pipefd[0]);
-                close(pipefd[1]);
-                continue;
-            }
-            else if ( newPid == 0 )
-            {
-                if (dup2(pipefd[0], STDIN_FILENO) == -1) {
-                    perror("dup2");
-                }
-                close(pipefd[0]);
-                close(pipefd[1]);
-
-                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
-                perror("execvp failure\n");
-            }
-        }
-        else if ( curProcess + 1 < amountProcess)
-        {
-            createPipe(pipefd);
-
-            newPid = fork();
-
-            if( newPid )
-            {
+                processPids[curProcess] = newPid;
                 close(pipefd[1]);
                 if( curProcess > 0 )
                 {
@@ -123,35 +65,55 @@ void runCommand( Command* command)
             }
             else if ( newPid == 0 )
             {
-
-
-
-                if (dup2(pipefd[0], STDIN_FILENO) == -1) {
-                    perror("dup2");
+                if( fdIn != STDIN_FILENO ){
+                    if ( dupFd2(fdIn, STDIN_FILENO) ) break;
                 }
 
-                if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
-                    perror("dup2");
+                if( curProcess + 1 < amountProcess ){
+                    if( dupFd2(pipefd[1], STDOUT_FILENO) ) break;
                 }
+
                 close(pipefd[0]);
                 close(pipefd[1]);
 
-                execvp( commandArgv[curProcess][0], commandArgv[curProcess]);
-                perror("execvp failure\n");
+                execFromPipe( commandArgv[curProcess][0], commandArgv[curProcess]);
             }
         }
         
     }
+    if (fdIn != STDIN_FILENO) {
+        close(fdIn);
+    }
+
+    int processStatus = 0;
+    for( size_t curProcess = 0; curProcess < amountProcess; curProcess++)
+    {
+        waitpid(processPids[curProcess], &processStatus, 0);
+        checkProcessStatus( processStatus, processPids[curProcess]);
+        
+    }
+
+    free(processPids);
+    commandsArrDtor( commandArgv, amountProcess);
 }
 
-static void checkProcessStatus( int processStatus)
+static void checkProcessStatus( int processStatus, pid_t pid)
 {
-    if( !WEXITSTATUS(processStatus) )
+    if( WIFEXITED(processStatus) ){
+        if( !WEXITSTATUS(processStatus) )
+        {
+            fprintf(stderr, "process %d finished successfully\n", pid);
+        }
+        else{
+            fprintf(stderr, "process %d failed with exit code %d\n", pid, WEXITSTATUS(processStatus));
+        }
+    }
+    else if ( WIFSIGNALED(processStatus) )
     {
-        fprintf(stderr, "process finished successfully\n");
+        int signalNumber = WTERMSIG(processStatus);
+
+        fprintf(stderr, "process %d killed because received signal %d\n", pid, signalNumber);
     }
-    else{
-        fprintf(stderr, "process failed with exit code %d\n", WEXITSTATUS(processStatus));
-    }
+    
 }
 
