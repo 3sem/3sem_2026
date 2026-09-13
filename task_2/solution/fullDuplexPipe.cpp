@@ -1,6 +1,8 @@
 #include <malloc.h>
 #include <assert.h>
+#include <errno.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "fullDuplexPipe.h"
 
@@ -42,8 +44,10 @@ void fDupPipeDtor(struct fDupPipe_t* fDupPipe){
             close(fDupPipe->pipeUp[1]);
         }
         else if(fDupPipe->childPid > 0){
-            close(fDupPipe->pipeDown[0]);
-            close(fDupPipe->pipeUp[1]);   
+            close(fDupPipe->pipeDown[1]);
+            close(fDupPipe->pipeUp[0]);
+
+            while(waitpid(fDupPipe->childPid, NULL, 0) < 0 && errno == EINTR) {}
         }
     }
     else{

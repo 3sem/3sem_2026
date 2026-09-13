@@ -1,16 +1,14 @@
 #include <stdio.h>
-#include <unistd.h>
 
-#include "fullDuplexPipe.h"
+#include "echoTest.h"
 
-#include "linuxCmd.h"
+int main(int argc, char* argv[]){
+    if(argc != 3){
+        fprintf(stderr, "Usage: %s <input> <output>\n", argv[0]);
+        return 1;
+    }
 
-int main(){
+    runEchoTest(argv[1], argv[2]);
 
-    struct fDupPipe_t* fDupPipe = fDupPipeCtor();    
-
-    
-
-    fDupPipeDtor(fDupPipe);
+    return 0;
 }
-
