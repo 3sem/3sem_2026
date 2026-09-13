@@ -28,11 +28,32 @@ struct fDupPipe_t* fDupPipeCtor(){
 
     fDupPipe->operations.writeDown = fDupPipeWriteDown;
     fDupPipe->operations.writeUp   = fDupPipeWriteUp;
+    
+    fDupPipe->isForked             = false;
+    fDupPipe->childPid             = 0;
 
     return fDupPipe;
 }
 
 void fDupPipeDtor(struct fDupPipe_t* fDupPipe){
+    if(fDupPipe->isForked){
+        if(fDupPipe->childPid == 0){
+            close(fDupPipe->pipeDown[0]);
+            close(fDupPipe->pipeUp[1]);
+        }
+        else if(fDupPipe->childPid > 0){
+            close(fDupPipe->pipeDown[0]);
+            close(fDupPipe->pipeUp[1]);   
+        }
+    }
+    else{
+        close(fDupPipe->pipeDown[0]);
+        close(fDupPipe->pipeDown[1]);
+
+        close(fDupPipe->pipeUp[0]);
+        close(fDupPipe->pipeUp[1]);
+    }
+
     free(fDupPipe);
     fDupPipe = NULL;
 }
@@ -49,7 +70,12 @@ pid_t fDupPipeFork(struct fDupPipe_t* fDupPipe){
     else if(pid > 0){
         close(fDupPipe->pipeDown[0]);
         close(fDupPipe->pipeUp[1]);
+
     }
+    
+    fDupPipe->childPid = pid;
+    fDupPipe->isForked = true;
+
 
     return pid; 
 }

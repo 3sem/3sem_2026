@@ -21,6 +21,9 @@ struct fDupPipe_t{
     int pipeDown[2];
     int pipeUp[2];
 
+    bool isForked;
+    pid_t childPid;
+
     Ops operations;
 };
 
