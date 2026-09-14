@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-const size_t MAX_STR_SIZE = 256;
+constexpr const size_t MAX_STR_SIZE = 256;
 
 enum commandReadCode
 {
@@ -11,14 +11,14 @@ enum commandReadCode
     READ_SUCCESS
 };
 
-struct Command
+typedef struct Command
 {
     char commandStr[MAX_STR_SIZE];
-    commandReadCode readStatus;
-};
+    enum commandReadCode readStatus;
+} Command;
 
 
-Command readCommand();
+Command readCommand(void);
 void    runCommand( Command* command);
 
 #endif /* COMMAND_H */

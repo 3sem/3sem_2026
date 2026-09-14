@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 const char* STRTOK_DELIM          = " \t\r\n";
 const size_t START_AMOUNT_OF_ARGS = 2;
@@ -18,7 +18,7 @@ char*** parseCommand( char* command, size_t* amountProcess)
     char*** pipeLine = (char***) calloc(MAX_PIPELINE_LENGTH, sizeof(char**));
     assert(pipeLine);
 
-    char* savePtr = nullptr;
+    char* savePtr = NULL;
     char* token = strtok_r(command, STRTOK_DELIM, &savePtr);
 
     *amountProcess = 0;
@@ -43,10 +43,10 @@ char*** parseCommand( char* command, size_t* amountProcess)
             }
 
             parsedArgs[argsCount++] = token;
-            token = strtok_r(nullptr, STRTOK_DELIM, &savePtr);
+            token = strtok_r(NULL, STRTOK_DELIM, &savePtr);
         }
 
-        parsedArgs[argsCount] = nullptr;
+        parsedArgs[argsCount] = NULL;
 
         if( *amountProcess >= MAX_PIPELINE_LENGTH - 1)
         {
@@ -55,7 +55,7 @@ char*** parseCommand( char* command, size_t* amountProcess)
         }
 
         pipeLine[(*amountProcess)++] = parsedArgs;
-        token = strtok_r(nullptr, STRTOK_DELIM, &savePtr);
+        token = strtok_r(NULL, STRTOK_DELIM, &savePtr);
     }
 
     return pipeLine;
@@ -68,13 +68,13 @@ void dumpPipeline( char*** pipeline)
     fprintf( stderr, "pipeline:\n");
 
     for (size_t processIndex = 0;
-         pipeline[processIndex] != nullptr;
+         pipeline[processIndex] != NULL;
          processIndex++)
     {
         fprintf( stderr, "  process[%zu]:\n", processIndex);
 
         for ( size_t argIndex = 0;
-             pipeline[processIndex][argIndex] != nullptr;
+             pipeline[processIndex][argIndex] != NULL;
              argIndex++)
         {
             fprintf( stderr, "    argv[%zu] = \"%s\"\n",
