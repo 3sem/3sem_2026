@@ -1,17 +1,16 @@
 #ifndef FULL_DUPLEX_PIPE_H
 #define FULL_DUPLEX_PIPE_H
 
-#include "sys/types.h"
+#include <sys/types.h>
+#include <stdbool.h>
 
-typedef struct op_table Ops;
-
-struct fDupPipe_t;
+typedef struct fDupPipe_t fDupPipe_t;
 
 typedef struct op_table{
     pid_t (*fork)(fDupPipe_t *self);
 
-    ssize_t (*writeDown)(struct fDupPipe_t* fDupPipe, const void* buf, size_t count);                        
-    ssize_t (*writeUp)(struct fDupPipe_t* fDupPipe, const void* buf, size_t count);                        
+    ssize_t (*writeDown)(struct fDupPipe_t* fDupPipe, const void* buf, size_t count);
+    ssize_t (*writeUp)(struct fDupPipe_t* fDupPipe, const void* buf, size_t count);
 
     ssize_t (*readDown)(struct fDupPipe_t* fDupPipe, void* buf, size_t count);
     ssize_t (*readUp)(struct fDupPipe_t* fDupPipe, void* buf, size_t count);
@@ -27,7 +26,7 @@ struct fDupPipe_t{
     Ops operations;
 };
 
-struct fDupPipe_t* fDupPipeCtor();
+struct fDupPipe_t* fDupPipeCtor(void);
 void               fDupPipeDtor(struct fDupPipe_t* fDupPipe);
 
 pid_t fDupPipeFork(struct fDupPipe_t* fDupPipe);

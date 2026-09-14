@@ -3,11 +3,11 @@
 
 #include <stddef.h>
 
-struct FileBuffer
+typedef struct FileBuffer
 {
     char* data;
     size_t size;
-};
+} FileBuffer;
 
 int readFileBuffer(const char* fileName, FileBuffer* buffer);
 void freeFileBuffer(FileBuffer* buffer);

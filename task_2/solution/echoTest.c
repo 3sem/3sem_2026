@@ -18,7 +18,7 @@ struct SendFileArgs{
 const size_t FILE_CHUNK_SIZE = 4096;
 
 void* sendFile(void* args){
-    SendFileArgs* sendArgs = (SendFileArgs*) args;
+    struct SendFileArgs* sendArgs = args;
     fDupPipe_t* fDupPipe = sendArgs->fDupPipe;
     const FileBuffer* buffer = sendArgs->buffer;
 
@@ -30,7 +30,7 @@ void* sendFile(void* args){
 
         ssize_t written = fDupPipe->operations.writeDown(
             fDupPipe, buffer->data + sent, count);
-        if(written < 0) continue;
+        if(written < 0 && errno == EINTR) continue;
         if(written <= 0){ perror("writeDown"); exit(1); }
 
         sent += (size_t) written;
@@ -40,18 +40,19 @@ void* sendFile(void* args){
 }
 
 void echoFile(fDupPipe_t* fDupPipe){
-    char chunk[FILE_CHUNK_SIZE] = {};
+    char chunk[FILE_CHUNK_SIZE];
 
     while(true){
         ssize_t count = fDupPipe->operations.readDown(fDupPipe, chunk, sizeof(chunk));
-        if(count <= 0) break;
+        if(count < 0 && errno == EINTR) continue;
+        if(count == 0) break;
         if(count < 0){ perror("readDown"); exit(1); }
 
         size_t sent = 0;
         while(sent < (size_t) count){
             ssize_t written = fDupPipe->operations.writeUp(
                 fDupPipe, chunk + sent, (size_t) count - sent);
-            if(written < 0) continue;
+            if(written < 0 && errno == EINTR) continue;
             if(written <= 0){ perror("writeUp"); exit(1); }
 
             sent += (size_t) written;
@@ -64,24 +65,28 @@ int runEchoTest(const char* inputFileName, const char* outputFileName){
     assert(fDupPipe);
 
     pid_t pid = fDupPipeFork(fDupPipe);
+    if(pid < 0){
+        fDupPipeDtor(fDupPipe);
+        return 1;
+    }
 
     if(pid > 0){
-        FileBuffer input = {};
+        FileBuffer input = {0};
         if(readFileBuffer(inputFileName, &input) != 0){
             fDupPipeDtor(fDupPipe);
             return 1;
         }
 
-        FileBuffer output = {};
+        FileBuffer output = {0};
         output.size = input.size;
-        output.data = (char*) malloc(output.size);
+        output.data = (char*) malloc(output.size ? output.size : 1);
         assert(output.data);
 
-        struct timespec start = {}, finish = {};
+        struct timespec start = {0}, finish = {0};
         clock_gettime(CLOCK_MONOTONIC, &start);
 
         pthread_t senderThId;
-        SendFileArgs sendArgs = {fDupPipe, &input};
+        struct SendFileArgs sendArgs = {fDupPipe, &input};
         int threadError = pthread_create(&senderThId, NULL, sendFile, &sendArgs);
         if (threadError != 0) {
             errno = threadError;
@@ -96,7 +101,12 @@ int runEchoTest(const char* inputFileName, const char* outputFileName){
         while(received < output.size){
             ssize_t count = fDupPipe->operations.readUp(
                 fDupPipe, output.data + received, output.size - received);
-            if(count < 0) continue;
+            if(count < 0 && errno == EINTR) continue;
+            if(count < 0){ perror("readUp"); exit(1); }
+            if(count == 0){
+                fprintf(stderr, "Unexpected EOF from child\n");
+                exit(1);
+            }
 
             received += (size_t) count;
         }
@@ -114,11 +124,15 @@ int runEchoTest(const char* inputFileName, const char* outputFileName){
         FILE* file = fopen(outputFileName, "wb");
         assert(file);
 
-        fwrite(output.data, 1, output.size, file);
-        fclose(file);
+        int writeFailed = fwrite(output.data, 1, output.size, file) != output.size;
+        if(fclose(file) != 0) writeFailed = 1;
 
         freeFileBuffer(&input);
         freeFileBuffer(&output);
+        if(writeFailed){
+            fprintf(stderr, "Failed to write output file\n");
+            return 1;
+        }
     }
     else if(pid == 0){
         echoFile(fDupPipe);

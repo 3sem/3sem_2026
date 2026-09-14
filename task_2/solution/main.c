@@ -8,7 +8,5 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    runEchoTest(argv[1], argv[2]);
-
-    return 0;
+    return runEchoTest(argv[1], argv[2]);
 }

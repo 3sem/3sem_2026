@@ -16,7 +16,7 @@ int readFileBuffer(const char* fileName, FileBuffer* buffer)
     FILE* file = fopen( fileName, "rb");
     assert(file);
 
-    struct stat fileInfo = {};
+    struct stat fileInfo = {0};
     if(fstat(fileno(file), &fileInfo) != 0){
         perror("file size");
         fclose(file);
