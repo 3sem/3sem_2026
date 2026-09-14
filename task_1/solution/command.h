@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-constexpr const size_t MAX_STR_SIZE = 256;
+#define MAX_STR_SIZE 256
 
 enum commandReadCode
 {
