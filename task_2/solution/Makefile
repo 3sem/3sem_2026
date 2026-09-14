@@ -1,7 +1,6 @@
-# GCC 14+ (C23)
 CC = gcc
 CPPFLAGS += -I../../common -D_POSIX_C_SOURCE=200809L -D_FILE_OFFSET_BITS=64
-CFLAGS ?= -std=c23 -Wall -Wextra -Wpedantic -O2 -g
+CFLAGS ?= -Wall -Wextra -Wpedantic -O2 -g
 TARGET := fullDuplexPipe
 BUILD_DIR := build
 SOURCES := main.c echoTest.c fullDuplexPipe.c fileBuffer.c
