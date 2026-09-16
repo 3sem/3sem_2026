@@ -10,3 +10,6 @@ build/
 
 # cache
 .cache/
+
+#settings
+compile_commands.json
