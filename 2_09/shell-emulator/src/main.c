@@ -68,7 +68,8 @@ void shell_func() {
         printf("> ");
 
         arg args_arr[COMMANDS_AM] = {};
-        char buffer[BUFF_SIZE];
+        char buffer[BUFF_SIZE+1];                               //to prevent overflow
+        buffer[BUFF_SIZE] = '\n';
 
         size_t comm_count = arr_of_ptr(buffer, args_arr);
         if (comm_count == 1 && args_arr[0].amount == 0) {       //if the input is empty

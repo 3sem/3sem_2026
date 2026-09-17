@@ -2,7 +2,7 @@ ifeq ($(origin CC), default)
 	CC = gcc
 endif
 
-CFLAGS ?= -g -no-pie 
+CFLAGS ?= -g -no-pie -Wall
 OUT_O_DIR ?= build
 COMMONINC = -I./include
 SRC = src
