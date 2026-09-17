@@ -18,12 +18,20 @@ char*** parseCommand( char* command, size_t* amountProcess)
     char*** pipeLine = (char***) calloc(MAX_PIPELINE_LENGTH, sizeof(char**));
     assert(pipeLine);
 
-    char* savePtr = NULL;
-    char* token = strtok_r(command, STRTOK_DELIM, &savePtr);
+    char* pipelineSavePtr = NULL;
+    char* process = strtok_r(command, "|", &pipelineSavePtr);
 
     *amountProcess = 0;
-    while( token )
+    while( process )
     {
+        char* savePtr = NULL;
+        char* token = strtok_r(process, STRTOK_DELIM, &savePtr);
+        if( !token )
+        {
+            process = strtok_r(NULL, "|", &pipelineSavePtr);
+            continue;
+        }
+
         size_t capacity = START_AMOUNT_OF_ARGS;
         size_t argsCount = 0;
         char** parsedArgs = (char**) calloc(capacity, sizeof(char*));
@@ -31,11 +39,6 @@ char*** parseCommand( char* command, size_t* amountProcess)
 
         while ( token )
         {
-            if( *token == '|' )
-            {
-                break;
-            }
-
             if (argsCount + 1 >= capacity)
             {
                 capacity *= 2;
@@ -55,7 +58,7 @@ char*** parseCommand( char* command, size_t* amountProcess)
         }
 
         pipeLine[(*amountProcess)++] = parsedArgs;
-        token = strtok_r(NULL, STRTOK_DELIM, &savePtr);
+        process = strtok_r(NULL, "|", &pipelineSavePtr);
     }
 
     return pipeLine;
