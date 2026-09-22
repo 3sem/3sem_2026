@@ -11,5 +11,9 @@ build/
 # cache
 .cache/
 
+#txt
+
+*.txt
+
 #settings
 compile_commands.json
