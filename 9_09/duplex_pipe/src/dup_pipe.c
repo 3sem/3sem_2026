@@ -23,7 +23,7 @@ int emulation() {
 
         if (file_fd == -1 || out_fd == -1) {
             perror("open");
-            return 1;
+            return -1;
         }
         
         char buffer[BUF_SZ];
@@ -73,7 +73,7 @@ int emulation() {
         channel.is_parent = false;
 
         if (channel.ops.close_unused(&channel) == -1) {
-            return 1;
+            return -1;
         }
         char buffer[BUF_SZ];
 
@@ -96,7 +96,7 @@ int emulation() {
 
         if (channel.ops.close_end(&channel) == -1) {
             perror("close_end failed\n");
-            return 1;
+            return -1;
         }
     }
     return 0;
