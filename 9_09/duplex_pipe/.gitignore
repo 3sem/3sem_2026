@@ -1,0 +1,14 @@
+# Build
+build/
+*.o
+*.out
+*.exe
+
+# Compilation database
+compile_commands.json
+
+#txt
+*.txt
+
+# Clangd cache
+.cache/
