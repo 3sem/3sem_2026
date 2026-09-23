@@ -1,21 +1,19 @@
-#include "fifo.h"
+#include "shMem.h"
 
-#include <assert.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <malloc.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <sys/types.h>
 
-#define BUFFER_SIZE 4096
+void shMemSend(key_t key, FileBuffer* buffer){
+    assert(buffer);
 
-void fifoSend(const char* fifoName, FileBuffer* buffer){
-    assert(fifoName);
+    int shmid = shmget(key, 4096, IPC_CREAT | IPC_EXCL | 0666);
 
-    mknod(fifoName, S_IFIFO | 0666, 0);
-    printf("Waiting for a reader\n");
-    int fd = open(fifoName, O_WRONLY);
+    void *shmPtr = shmat(shmid, NULL, 0);
+    if (shmPtr == (void *)-1) {
+        perror("shmat");
+    }
+
     printf("A reader is connected\n");
 
     int  sendSize = 0;
@@ -30,33 +28,29 @@ void fifoSend(const char* fifoName, FileBuffer* buffer){
         curPtr += curSize;
         sendSize += curSize; 
 
-        write(fd, buf, curSize);
-
+        memcpy(shmPtr, buf, curSize);
     }
-    close(fd);
+    
+    shmdt(shmPtr)ж
 }
 
-void fifoRead(const char* fifoName, FileBuffer* buffer){
-    assert(fifoName);
+void shMemRead(key_t key, FileBuffer* buffer){
+    assert(buffer);
 
     if(buffer->size == 0){
         buffer->data = calloc(BUFFER_SIZE, sizeof(char));
         buffer->size = BUFFER_SIZE;
     } 
 
-    if(mknod(fifoName, S_IFIFO | 0666, 0) == -1){
-        perror("mkfifo");
-        return;
-    }
-    
-    fprintf(stderr, "Before open: %s\n", fifoName);
-    
-    int fd = open(fifoName, O_RDONLY);
-    if (fd == -1) {
-        perror("open");
+    int shmid = shmget(key, 4096, 0);    
+    if (shmid == -1) {
+        perror("shmget");
     }
 
-    fprintf(stderr, "After open: fd=%d\n", fd);
+    shmat(shmid, NULL, SHM_RDONLY);
+    if (ptr == (void *)-1) {
+        perror("shmat");
+    }
 
     printf("A writer is connected\n");
 

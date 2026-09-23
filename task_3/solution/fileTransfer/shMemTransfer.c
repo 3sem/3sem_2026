@@ -1,20 +1,21 @@
 #include <assert.h>
 
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <sys/types.h>
+
 #include "transfer.h"
-
-#include "ipc/fifo.h"
-
 #include "fileBuffer.h"
 
-char fifoName[] = "/tmp/myFifo";
+#include "ipc/shMem.h"
+
+key_t shMemKey = ftok("/tmp/myShm", 'S');
 
 void send(const char* inputFileName){
     assert(inputFileName);
 
     FileBuffer buffer = {};
     readFileBuffer(inputFileName, &buffer);
-    
-    fifoSend(fifoName, &buffer);
 
     freeFileBuffer(&buffer);
 }
@@ -23,7 +24,6 @@ void receive(const char* outputFileName){
     assert(outputFileName);
 
     FileBuffer buffer = {0};
-    fifoRead(fifoName, &buffer);
     
     writeFileBuffer(outputFileName, &buffer);
 

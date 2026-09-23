@@ -25,14 +25,12 @@ int main(int argc, char* argv[]){
 
     flagsHandle(argc, argv, &fileName, &mode);
 
-    char fifoName[] = "/tmp/myFifo";
-
     switch(mode){
         case SEND:
-            send(fifoName, fileName);
+            send(fileName);
             break;
         case READ:
-            receive(fifoName, fileName);
+            receive(fileName);
             break;
     }
 
