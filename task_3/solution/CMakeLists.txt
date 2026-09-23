@@ -5,14 +5,30 @@ project(fileTransfer
     LANGUAGES C
 )
 
-add_library(linuxCmd STATIC
-    ../../common/linuxCmd.c
+option(
+    FIFO
+    "Enable fifo transfer"
+    OFF
 )
 
-target_include_directories(linuxCmd PUBLIC
+add_library(common STATIC
+    ../../common/linuxCmd.c
+    ../../common/fileBuffer.c
+    ../../common/ipc/fifo.c
+)
+
+target_include_directories(common PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/../../common"
 )
 
 add_executable(ipcTransfer main.c)
 
-target_link_libraries(ipcTransfer PRIVATE linuxCmd)
+target_link_libraries(ipcTransfer PRIVATE common)
+
+if(FIFO)
+    add_library(fifoModule STATIC
+        fileTransfer/fifoTransfer.c
+    )
+    target_link_libraries(fifoModule PUBLIC common)
+    target_link_libraries(ipcTransfer PRIVATE fifoModule)
+endif()
