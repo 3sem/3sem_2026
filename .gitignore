@@ -1,0 +1,19 @@
+# object files
+*.o
+
+# executables
+*.out
+*.exe
+
+# build directory
+build/
+
+# cache
+.cache/
+
+#txt
+
+*.txt
+
+#settings
+compile_commands.json
