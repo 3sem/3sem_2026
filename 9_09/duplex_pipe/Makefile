@@ -31,6 +31,6 @@ $(DEPS) : $(OUT_O_DIR)/%.d : %.c
 	$(CC) -E $(CFLAGS) $< -MM -MT $(@:.d=.o) > $@
 
 
-PHONY: clean
+.PHONY: clean
 clean:
 	rm -rf $(OUT_O_DIR)
