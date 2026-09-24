@@ -1,72 +1,117 @@
 #include "shMem.h"
 
-#include <sys/shm.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <malloc.h>
+
+#include <semaphore.h>
+
+#define CHUNK_SIZE 4096
+
+struct SharedMessage {
+    sem_t empty;          
+    sem_t full;           
+
+    size_t size;       
+    int finished;      
+    char data[CHUNK_SIZE];
+};
 
 void shMemSend(key_t key, FileBuffer* buffer){
     assert(buffer);
 
-    int shmid = shmget(key, 4096, IPC_CREAT | IPC_EXCL | 0666);
+    int shmid = shmget(key, sizeof(struct SharedMessage), IPC_CREAT | IPC_EXCL | 0666);
+    if (shmid == -1) {
+        perror("shmget");
+        return;
+    }   
 
-    void *shmPtr = shmat(shmid, NULL, 0);
-    if (shmPtr == (void *)-1) {
-        perror("shmat");
+    struct SharedMessage* msg = shmat(shmid, NULL, 0);
+    if (msg == (void *)-1) {
+        perror("shmat");        
+        return;
     }
 
-    printf("A reader is connected\n");
+    sem_init(&msg->empty, 1, 1);
+    sem_init(&msg->full, 1, 0);
 
-    int  sendSize = 0;
-    char buf[BUFFER_SIZE] = "";
-    char* curPtr = buffer->data;
-
+    size_t sendSize = 0;
     while(sendSize < buffer->size){
-        int curSize = (buffer->size - sendSize) > BUFFER_SIZE ? BUFFER_SIZE : (buffer->size - sendSize);
+        size_t remaining = buffer->size - sendSize;
+        size_t curSize = remaining > CHUNK_SIZE ? CHUNK_SIZE : remaining;
 
-        memcpy(buf, curPtr, curSize);
+        sem_wait(&msg->empty);
+
+        msg->size = curSize;
+        msg->finished = 0;
+        memcpy(msg->data, buffer->data + sendSize, curSize);
             
-        curPtr += curSize;
-        sendSize += curSize; 
+        sem_post(&msg->full);
 
-        memcpy(shmPtr, buf, curSize);
+        sendSize += curSize; 
     }
     
-    shmdt(shmPtr)ж
+    sem_wait(&msg->empty);
+
+    msg->size = 0;
+    msg->finished = 1;
+
+    sem_post(&msg->full);
+
+
+    sem_wait(&msg->empty);
+    sem_destroy(&msg->empty);
+    sem_destroy(&msg->full);
+    shmdt(msg);
+    shmctl(shmid, IPC_RMID, NULL);   
 }
 
 void shMemRead(key_t key, FileBuffer* buffer){
     assert(buffer);
 
     if(buffer->size == 0){
-        buffer->data = calloc(BUFFER_SIZE, sizeof(char));
-        buffer->size = BUFFER_SIZE;
+        buffer->data = calloc(CHUNK_SIZE, sizeof(char));
+        buffer->size = CHUNK_SIZE;
     } 
 
-    int shmid = shmget(key, 4096, 0);    
+    int shmid = shmget(key, sizeof(struct SharedMessage), 0);    
     if (shmid == -1) {
         perror("shmget");
     }
 
-    shmat(shmid, NULL, SHM_RDONLY);
-    if (ptr == (void *)-1) {
+    struct SharedMessage* msg = shmat(shmid, NULL, 0);
+    if (msg == (void *)-1) {
         perror("shmat");
     }
 
-    printf("A writer is connected\n");
-
-    int  readSize = 0;
+    size_t  readSize = 0;
     size_t needed = 0;
-    char buf[BUFFER_SIZE] = "";
 
-    int  curSize = 0;
-    while(( curSize = read(fd, buf, sizeof(buf)-1)) > 0){
+    size_t curSize = 0;
+    while(1){
+        sem_wait(&msg->full);
+
+        if(msg->finished){
+            sem_post(&msg->empty);
+            break;
+        }
+
+        curSize = msg->size;
         needed = readSize + (size_t)curSize;
         if(needed > buffer->size){
             reallocFileBuffer(buffer, buffer->size * 2);
         }
 
-        memcpy(buffer->data + readSize, buf, curSize);
+        memcpy(buffer->data + readSize, msg->data, curSize);
+
+        sem_post(&msg->empty);
             
         readSize += curSize; 
     }
+
+    buffer->size = readSize;
+
+    shmdt(msg);
 }
