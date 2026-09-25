@@ -14,7 +14,7 @@ option(
 set(transfer_config "${CMAKE_CURRENT_SOURCE_DIR}/transfer.conf")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${transfer_config}")
 file(STRINGS "${transfer_config}" transfer_config_lines)
-foreach(path_name IN ITEMS FIFO_PATH SHMEM_PATH)
+foreach(path_name IN ITEMS FIFO_PATH SHMEM_PATH QUEUE_PATH)
     unset(${path_name})
     foreach(line IN LISTS transfer_config_lines)
         if(line MATCHES "^${path_name}=\"(/[A-Za-z0-9_./ -]+)\"$")
@@ -32,15 +32,21 @@ option(
     OFF
 )
 
+option(
+    QUEUE
+    "Enable message queue transfer"
+    OFF
+)
+
 set(transfer_option_count 0)
-foreach(transfer_option IN ITEMS FIFO SHMEM)
+foreach(transfer_option IN ITEMS FIFO SHMEM QUEUE)
     if(${transfer_option})
         math(EXPR transfer_option_count "${transfer_option_count} + 1")
     endif()
 endforeach()
 
 if(NOT transfer_option_count EQUAL 1)
-    message(FATAL_ERROR "Enable exactly one transfer option: FIFO or SHMEM")
+    message(FATAL_ERROR "Enable exactly one transfer option: FIFO, SHMEM or QUEUE")
 endif()
 
 add_library(common STATIC
@@ -72,4 +78,12 @@ elseif(SHMEM)
     target_link_libraries(shmemModule PUBLIC common)
     target_compile_definitions(shmemModule PRIVATE SHMEM_PATH="${SHMEM_PATH}")
     target_link_libraries(ipcTransfer PRIVATE shmemModule)
+elseif(QUEUE)
+    add_library(queueModule STATIC
+        fileTransfer/queueTransfer.c
+        ../../common/ipc/queue.c
+    )
+    target_link_libraries(queueModule PUBLIC common)
+    target_compile_definitions(queueModule PRIVATE QUEUE_PATH="${QUEUE_PATH}")
+    target_link_libraries(ipcTransfer PRIVATE queueModule)
 endif()

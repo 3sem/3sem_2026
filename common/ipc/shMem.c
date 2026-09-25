@@ -60,7 +60,6 @@ void shMemSend(key_t key, FileBuffer* buffer){
 
     sem_post(&msg->full);
 
-
     sem_wait(&msg->empty);
     sem_destroy(&msg->empty);
     sem_destroy(&msg->full);
