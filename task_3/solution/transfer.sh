@@ -4,9 +4,17 @@ set -euo pipefail
 test_file="testFile"
 test_file_out="testFileOut"
 
-if [[ $# -ne 2 ]]; then
-    echo "Usage: $0 <fifo|shMem|queue> <--send|--read>" >&2
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+    echo "Usage: $0 <fifo|shMem|queue> <--send|--read> [size_in_bytes]" >&2
+    echo "Size is used when sending; default: 1048576 bytes." >&2
     echo "Start the reader first for fifo, or the sender first for shMem." >&2
+    exit 1
+fi
+
+file_size=${3-1048576}
+
+if [[ ! $file_size =~ ^[0-9]+$ ]]; then
+    echo "File size must be a non-negative integer in bytes." >&2
     exit 1
 fi
 
@@ -55,7 +63,7 @@ elif [[ $mode == read ]]; then
 fi
 
 if [[ $mode == send ]]; then
-    bash ./genTestFile.sh "$test_file"
+    bash ./genTestFile.sh "$test_file" "$file_size"
     echo "Sending $test_file using $1..."
     ./build/ipcTransfer -f "$test_file" -s
 else
