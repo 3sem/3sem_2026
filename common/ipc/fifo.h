@@ -3,7 +3,7 @@
 
 #include "fileBuffer.h"
 
-void fifoSend(const char* fifoName, FileBuffer* buffer);
-void fifoRead(const char* fifoName, FileBuffer* buffer);
+int fifoSend(const char* fifoName, FileBuffer* buffer, size_t chunkSize);
+int fifoRead(const char* fifoName, FileBuffer* buffer, size_t chunkSize);
 
 #endif /* FIFO_H */

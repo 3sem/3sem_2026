@@ -1,29 +1,32 @@
 #include <assert.h>
+#include <stdio.h>
 
 #include "transfer.h"
-
+#include "fileBuffer.h"
 #include "ipc/fifo.h"
 
-#include "fileBuffer.h"
-
-void send(const char* inputFileName){
+int send(const char* inputFileName, size_t chunkSize){
     assert(inputFileName);
 
-    FileBuffer buffer = {};
-    readFileBuffer(inputFileName, &buffer);
-    
-    fifoSend(FIFO_PATH, &buffer);
+    FileBuffer buffer = {0};
+    if(readFileBuffer(inputFileName, &buffer) == -1) return -1;
 
+
+    int result = fifoSend(FIFO_PATH, &buffer, chunkSize);
     freeFileBuffer(&buffer);
+    return result;
 }
 
-void receive(const char* outputFileName){
+int receive(const char* outputFileName, size_t chunkSize){
     assert(outputFileName);
 
     FileBuffer buffer = {0};
-    fifoRead(FIFO_PATH, &buffer);
-    
-    writeFileBuffer(outputFileName, &buffer);
+
+    int result = fifoRead(FIFO_PATH, &buffer, chunkSize);
+    if(result == 0){
+        result = writeFileBuffer(outputFileName, &buffer);
+    }
 
     freeFileBuffer(&buffer);
+    return result;
 }

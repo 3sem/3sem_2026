@@ -7,7 +7,7 @@
 
 #include "fileBuffer.h"
 
-void queueSend(key_t key, FileBuffer* buffer);
-void queueRead(key_t key, FileBuffer* buffer);
+int queueSend(key_t key, FileBuffer* buffer, size_t chunkSize);
+int queueRead(key_t key, FileBuffer* buffer, size_t chunkSize);
 
 #endif /* QUEUE_H */

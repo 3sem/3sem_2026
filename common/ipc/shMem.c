@@ -10,19 +10,19 @@
 
 #include <semaphore.h>
 
-#define CHUNK_SIZE 4096
-
 struct SharedMessage {
     sem_t empty;
     sem_t full;
 
     size_t size;
+    size_t capacity;
     int finished;
-    char data[CHUNK_SIZE];
+    int failed;
+    char data[];
 };
 
-static int getSharedMemory(key_t key, int flags){
-    int id = shmget(key, sizeof(struct SharedMessage), flags);
+static int getSharedMemory(key_t key, size_t size, int flags){
+    int id = shmget(key, size, flags);
     if(id == -1) perror("shmget");
 
     return id;
@@ -58,6 +58,15 @@ static int postSemaphore(sem_t* semaphore){
     if(result == -1) perror("sem_post");
 
     return result;
+}
+
+static int waitForReader(struct SharedMessage* msg){
+    if(waitSemaphore(&msg->empty) == -1) return -1;
+    if(msg->failed){
+        fprintf(stderr, "Shared memory receiver failed\n");
+        return -1;
+    }
+    return 0;
 }
 
 static int initSemaphores(struct SharedMessage* msg){
@@ -97,9 +106,9 @@ static int sendBuffer(struct SharedMessage* msg, const FileBuffer* buffer){
     size_t sendSize = 0;
     while(sendSize < buffer->size){
         size_t remaining = buffer->size - sendSize;
-        size_t curSize = remaining > CHUNK_SIZE ? CHUNK_SIZE : remaining;
+        size_t curSize = remaining > msg->capacity ? msg->capacity : remaining;
 
-        if(waitSemaphore(&msg->empty) == -1) return -1;
+        if(waitForReader(msg) == -1) return -1;
 
         msg->size = curSize;
         msg->finished = 0;
@@ -110,14 +119,14 @@ static int sendBuffer(struct SharedMessage* msg, const FileBuffer* buffer){
         sendSize += curSize;
     }
 
-    if(waitSemaphore(&msg->empty) == -1) return -1;
+    if(waitForReader(msg) == -1) return -1;
 
     msg->size = 0;
     msg->finished = 1;
 
     if(postSemaphore(&msg->full) == -1) return -1;
 
-    return waitSemaphore(&msg->empty);
+    return waitForReader(msg);
 }
 
 static int receiveBuffer(struct SharedMessage* msg, FileBuffer* buffer){
@@ -137,7 +146,7 @@ static int receiveBuffer(struct SharedMessage* msg, FileBuffer* buffer){
         }
 
         curSize = msg->size;
-        if(curSize > sizeof(msg->data) || curSize > SIZE_MAX - readSize){
+        if(curSize > msg->capacity || curSize > SIZE_MAX - readSize){
             fprintf(stderr, "Invalid shared memory message size\n");
             return -1;
         }
@@ -159,39 +168,68 @@ static int receiveBuffer(struct SharedMessage* msg, FileBuffer* buffer){
     return 0;
 }
 
-void shMemSend(key_t key, FileBuffer* buffer){
+int shMemSend(key_t key, FileBuffer* buffer, size_t chunkSize){
     assert(buffer);
 
-    int shmid = getSharedMemory(key, IPC_CREAT | IPC_EXCL | 0666);
-    if(shmid == -1) return;
+    if(chunkSize == 0 || chunkSize > SIZE_MAX - sizeof(struct SharedMessage)){
+        fprintf(stderr, "Invalid shared memory chunk size\n");
+        return -1;
+    }
+
+    int shmid = getSharedMemory(key, sizeof(struct SharedMessage) + chunkSize,
+                               IPC_CREAT | IPC_EXCL | 0666);
+    if(shmid == -1) return -1;
 
     struct SharedMessage* msg = attachSharedMemory(shmid);
     if(msg == NULL){
         removeSharedMemory(shmid);
-        return;
+        return -1;
     }
 
-    if(initSemaphores(msg) == 0 && sendBuffer(msg, buffer) == 0){
+    msg->capacity = chunkSize;
+    msg->size = 0;
+    msg->finished = 0;
+    msg->failed = 0;
+
+    int result = initSemaphores(msg);
+    if(result == 0) result = sendBuffer(msg, buffer);
+    if(result == 0){
         destroySemaphores(msg);
     }
 
     detachSharedMemory(msg);
     removeSharedMemory(shmid);
+    return result;
 }
 
-void shMemRead(key_t key, FileBuffer* buffer){
+int shMemRead(key_t key, FileBuffer* buffer, size_t chunkSize){
     assert(buffer);
 
-    if(buffer->size == 0){
-        if(reallocFileBuffer(buffer, CHUNK_SIZE) == -1) return;
+    if(chunkSize == 0) return -1;
+    int shmid = getSharedMemory(key, sizeof(struct SharedMessage), 0);
+    if(shmid == -1) return -1;
+
+    struct shmid_ds info = {0};
+    if(shmctl(shmid, IPC_STAT, &info) == -1){
+        perror("shmctl IPC_STAT");
+        return -1;
     }
 
-    int shmid = getSharedMemory(key, 0);
-    if(shmid == -1) return;
-
     struct SharedMessage* msg = attachSharedMemory(shmid);
-    if(msg == NULL) return;
+    if(msg == NULL) return -1;
 
-    receiveBuffer(msg, buffer);
+    int result = -1;
+    if(msg->capacity != chunkSize ||
+       msg->capacity > info.shm_segsz - sizeof(struct SharedMessage)){
+        fprintf(stderr, "Shared memory chunk size mismatch\n");
+    } else {
+        result = receiveBuffer(msg, buffer);
+    }
+
+    if(result == -1){
+        msg->failed = 1;
+        postSemaphore(&msg->empty);
+    }
     detachSharedMemory(msg);
+    return result;
 }

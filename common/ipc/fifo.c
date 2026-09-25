@@ -5,11 +5,10 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#define BUFFER_SIZE 4096
 
 static int openFifo(const char* path, int flags){
     if(mkfifo(path, 0666) == -1){
@@ -70,54 +69,79 @@ static ssize_t readChunk(int fd, char* data, size_t size){
     return n;
 }
 
-static void closeFifo(int fd){
-    if(close(fd) == -1) perror("close FIFO");
+static int closeFifo(int fd){
+    int result = close(fd);
+    if(result == -1) perror("close FIFO");
+    return result;
 }
 
-void fifoSend(const char* fifoName, FileBuffer* buffer){
+int fifoSend(const char* fifoName, FileBuffer* buffer, size_t chunkSize){
     assert(fifoName);
     assert(buffer);
+    if(chunkSize == 0) return -1;
 
     int fd = openFifo(fifoName, O_WRONLY);
-    if(fd == -1) return;
+    if(fd == -1) return -1;
 
+    int result = 0;
     size_t sent = 0;
     while(sent < buffer->size){
         size_t remaining = buffer->size - sent;
-        size_t size = remaining > BUFFER_SIZE ? BUFFER_SIZE : remaining;
+        size_t size = remaining > chunkSize ? chunkSize : remaining;
 
-        if(writeAll(fd, buffer->data + sent, size) == -1) break;
+        if(writeAll(fd, buffer->data + sent, size) == -1){
+            result = -1;
+            break;
+        }
 
         sent += size;
     }
 
-    closeFifo(fd);
+    if(closeFifo(fd) == -1) result = -1;
+    return result;
 }
 
-void fifoRead(const char* fifoName, FileBuffer* buffer){
+int fifoRead(const char* fifoName, FileBuffer* buffer, size_t chunkSize){
     assert(fifoName);
     assert(buffer);
+    if(chunkSize == 0) return -1;
+
+    char* data = calloc(chunkSize, 1);
+    if(data == NULL){
+        perror("FIFO buffer allocation");
+        return -1;
+    }
 
     int fd = openFifo(fifoName, O_RDONLY);
-    if(fd == -1) return;
+    if(fd == -1){
+        free(data);
+        return -1;
+    }
 
+    int result = 0;
     size_t readSize = 0;
-    char data[BUFFER_SIZE] = {0};
 
     ssize_t n = 0;
-    while((n = readChunk(fd, data, sizeof(data))) > 0){
+    while((n = readChunk(fd, data, chunkSize)) > 0){
         if((size_t)n > SIZE_MAX - readSize){
             fprintf(stderr, "FIFO file size overflow\n");
+            result = -1;
             break;
         }
 
         size_t needed = readSize + (size_t)n;
-        if(needed > buffer->size && reallocFileBuffer(buffer, needed) == -1) break;
+        if(needed > buffer->size && reallocFileBuffer(buffer, needed) == -1){
+            result = -1;
+            break;
+        }
 
         memcpy(buffer->data + readSize, data, (size_t)n);
         readSize = needed;
     }
 
     buffer->size = readSize;
-    closeFifo(fd);
+    if(n == -1) result = -1;
+    if(closeFifo(fd) == -1) result = -1;
+    free(data);
+    return result;
 }

@@ -1,35 +1,43 @@
 #include <assert.h>
-
-#include <sys/msg.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
+#include <stdio.h>
 
 #include "transfer.h"
 #include "fileBuffer.h"
-
 #include "ipc/queue.h"
 
-void send(const char* inputFileName){
+int send(const char* inputFileName, size_t chunkSize){
     assert(inputFileName);
 
-    FileBuffer buffer = {};
-    readFileBuffer(inputFileName, &buffer);
-    
-    key_t queueKey = ftok(QUEUE_PATH, 'S');
-    queueSend(queueKey, &buffer);
+    FileBuffer buffer = {0};
+    if(readFileBuffer(inputFileName, &buffer) == -1) return -1;
 
+    key_t key = ftok(QUEUE_PATH, 'S');
+    if(key == (key_t)-1){
+        perror("ftok");
+        freeFileBuffer(&buffer);
+        return -1;
+    }
+
+    int result = queueSend(key, &buffer, chunkSize);
     freeFileBuffer(&buffer);
+    return result;
 }
 
-void receive(const char* outputFileName){
+int receive(const char* outputFileName, size_t chunkSize){
     assert(outputFileName);
 
     FileBuffer buffer = {0};
-    
-    key_t queueKey = ftok(QUEUE_PATH, 'S');
-    queueRead(queueKey, &buffer);
+    key_t key = ftok(QUEUE_PATH, 'S');
+    if(key == (key_t)-1){
+        perror("ftok");
+        return -1;
+    }
 
-    writeFileBuffer(outputFileName, &buffer);
+    int result = queueRead(key, &buffer, chunkSize);
+    if(result == 0){
+        result = writeFileBuffer(outputFileName, &buffer);
+    }
 
     freeFileBuffer(&buffer);
+    return result;
 }

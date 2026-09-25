@@ -7,7 +7,7 @@
 
 #include "fileBuffer.h"
 
-void shMemSend(key_t key, FileBuffer* buffer);
-void shMemRead(key_t key, FileBuffer* buffer);
+int shMemSend(key_t key, FileBuffer* buffer, size_t chunkSize);
+int shMemRead(key_t key, FileBuffer* buffer, size_t chunkSize);
 
 #endif /* SH_MEM_H */
