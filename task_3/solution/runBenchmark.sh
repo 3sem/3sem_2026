@@ -104,19 +104,25 @@ run_transfer(){
 
 TIMEFORMAT='%R,%U,%S'
 
+# Reuse the same input file and reference checksum for every measurement.
+bash ./genTestFile.sh testFile "$file_size"
+input_checksum=$(md5sum < testFile)
+
 for transfer_mode in fifo shMem queue; do
     bash ./buildTransfer.sh "$transfer_mode"
 
-    for chunk_size in 8096 $((64 * 1024)) $((1024 * 1024)); do
+    sudo sysctl -w kernel.msgmax=268435456
+    sudo sysctl -w kernel.msgmnb=1073741824
+
+    for chunk_size in $((8 * 1024)) $((64 * 1024)) $((1024 * 1024)) \
+                      $((8 * 1024 * 1024)) $((64 * 1024 * 1024)); do
         for ((run = 0; run <= repetitions; run++)); do
             # Run 0 is a warm-up and is not written to results.csv.
             bash ./prepareTransfer.sh "$transfer_mode" read
-            bash ./prepareTransfer.sh "$transfer_mode" send "$file_size"
             rm -f -- testFileOut
 
             echo "Testing $transfer_mode: file $file_size bytes, chunk $chunk_size bytes, run $run/$repetitions"
             if { time run_transfer "$transfer_mode" "$chunk_size"; } 2> "$result_dir/timing.txt"; then
-                input_checksum=$(md5sum < testFile)
                 output_checksum=$(md5sum < testFileOut)
                 if [[ ${input_checksum%% *} != "${output_checksum%% *}" ]]; then
                     echo "MD5 mismatch; measurement rejected. Files preserved." >&2
@@ -134,9 +140,12 @@ for transfer_mode in fifo shMem queue; do
                 printf '%s,%s,%s,%s,%s\n' "$transfer_mode" "$file_size" "$chunk_size" "$run" \
                     "$(cat "$result_dir/timing.txt")" >> "$result_dir/results.csv"
             fi
-            rm -f -- testFile testFileOut
+            rm -f -- testFileOut
         done
     done
 done
 
+rm -f -- testFile
+
 echo "Results saved to $result_dir/results.csv"
+python3 ./plotBenchmark.py "$result_dir/results.csv" --output "$result_dir/transfer_times.png"
