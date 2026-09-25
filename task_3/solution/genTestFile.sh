@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-dd if=/dev/urandom of=testFile bs=1048576 count=1
+test_file=${1:-testFile}
+dd if=/dev/urandom of="$test_file" bs=1048576 count=1

@@ -15,7 +15,7 @@ void send(const char* inputFileName){
     FileBuffer buffer = {};
     readFileBuffer(inputFileName, &buffer);
     
-    key_t shMemKey = ftok("/tmp/myShm", 'S');
+    key_t shMemKey = ftok(SHMEM_PATH, 'S');
     shMemSend(shMemKey, &buffer);
 
     freeFileBuffer(&buffer);
@@ -26,7 +26,7 @@ void receive(const char* outputFileName){
 
     FileBuffer buffer = {0};
     
-    key_t shMemKey = ftok("/tmp/myShm", 'S');
+    key_t shMemKey = ftok(SHMEM_PATH, 'S');
     shMemRead(shMemKey, &buffer);
 
     writeFileBuffer(outputFileName, &buffer);

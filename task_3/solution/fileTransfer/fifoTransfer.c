@@ -6,15 +6,13 @@
 
 #include "fileBuffer.h"
 
-char fifoName[] = "/tmp/myFifo";
-
 void send(const char* inputFileName){
     assert(inputFileName);
 
     FileBuffer buffer = {};
     readFileBuffer(inputFileName, &buffer);
     
-    fifoSend(fifoName, &buffer);
+    fifoSend(FIFO_PATH, &buffer);
 
     freeFileBuffer(&buffer);
 }
@@ -23,7 +21,7 @@ void receive(const char* outputFileName){
     assert(outputFileName);
 
     FileBuffer buffer = {0};
-    fifoRead(fifoName, &buffer);
+    fifoRead(FIFO_PATH, &buffer);
     
     writeFileBuffer(outputFileName, &buffer);
 
