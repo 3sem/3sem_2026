@@ -50,7 +50,6 @@ if(NOT transfer_option_count EQUAL 1)
 endif()
 
 add_library(common STATIC
-    ../../common/linuxCmd.c
     ../../common/fileBuffer.c
 )
 
