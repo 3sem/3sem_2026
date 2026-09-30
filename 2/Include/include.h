@@ -42,7 +42,7 @@ static const BufferOps default_buf_ops = {
 };
 
 buffer_t *create_buffer  ();
-void      destroy_cmd_arr(buffer_t *buf);
+void      destroy_buffer(buffer_t *buf);
 
 //=================DuplexChannel===================
 typedef struct DuplexChannel duplex_ch_t;

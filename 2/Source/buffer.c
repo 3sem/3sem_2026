@@ -14,7 +14,7 @@ buffer_t *create_buffer(){
     return buf;
 }
 
-void destroy_cmd_arr(buffer_t *buf){
+void destroy_buffer(buffer_t *buf){
     free(buf);
 
     return;

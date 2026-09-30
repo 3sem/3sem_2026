@@ -26,6 +26,9 @@ int main() {
             waitpid(pid, &status, 0);
             break;
     }
+
+    destroy_buffer (buffer);
+    destroy_channel(duplex_ch);
     
     return 0;
 }
