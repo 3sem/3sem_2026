@@ -1,8 +1,10 @@
 
 #include "include.h"
 
+static const int max_command_size = 1024;
+
 int main() {
-    char command[1024];
+    char command[max_command_size];
 
     while (1){
         cmd_arr_t *cmd_arr = create_cmd_arr();
