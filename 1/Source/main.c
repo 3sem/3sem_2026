@@ -1,15 +1,18 @@
 
 #include "include.h"
 
-static const int max_command_size = 1024;
+#define MAX_CMD_SIZE 1023
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 int main() {
-    char command[max_command_size];
+    char command[MAX_CMD_SIZE + 1];
 
     while (1){
         cmd_arr_t *cmd_arr = create_cmd_arr();
 
-        if (scanf(" %[^\n]", command) == -1){
+        if (scanf(" %" STR(MAX_CMD_SIZE) "[^\n]", command) == -1){
             printf("exit\n");
 
             destroy_cmd_arr(cmd_arr);
