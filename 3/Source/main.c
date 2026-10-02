@@ -1,10 +1,18 @@
-#include "include.h"
+#if defined(SYS_V_QUEUE)
+#include "sys_v_queue.h"
+
+#elif defined(FIFO)
+#include "FIFO.h"
+
+#elif defined(SYS_V)
+#include "sys_v.h"
+#endif
 
 int main() {
     pid_t pid;
     int status;
-    buffer_t      *buffer;
-    if (!(buffer      = create_buffer     ())) return 0;
+    buffer_t *buffer;
+    if (!(buffer = create_buffer())) return 0;
 
 #if defined(SYS_V_QUEUE)
     sys_v_queue_t *sys_v_queue;

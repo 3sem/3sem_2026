@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define BUF_SIZE 65536
+#define BUF_SIZE 65536 // TODO
 
 static const char source[]      = "Source.txt";
 static const char destination[] = "Destination.txt";

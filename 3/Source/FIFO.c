@@ -1,6 +1,6 @@
-#include "include.h"
-
 #ifdef FIFO
+
+#include "FIFO.h"
 
 void start_parent(ch_t *ch, buffer_t *buffer){
     ch->actions->open_read_ch(ch);
@@ -73,4 +73,5 @@ void open_read_ch(ch_t *ch){
 void open_write_ch(ch_t *ch){
     ch->ch = open(ch->fifo_path, O_WRONLY);
 }
+
 #endif

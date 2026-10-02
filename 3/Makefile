@@ -1,7 +1,7 @@
 CC = gcc
 
 DIRSOURCE       = Source
-CFLAGSH         = -IInclude 
+CFLAGSH         = -IInclude -DSYS_V_QUEUE
 #-DSYS_V_QUEUE
 SOURCES         = $(wildcard $(DIRSOURCE)/*.c)
 OBJECTS         = $(patsubst %.c, %.o, $(SOURCES))
@@ -20,7 +20,7 @@ $(OBJECTS): %.o: %.c
 	$(CC) $(CFLAGSH) -c $^ -o ./$(DIR_BUILD)/$@
 
 make_folder:
-	time dd if=/dev/urandom of=Source.txt bs=1048576 count=4096
+	#time dd if=/dev/urandom of=Source.txt bs=1048576 count=4096
 	mkdir -p $(DIR_BUILD)/$(DIRSOURCE)/
 
 start:

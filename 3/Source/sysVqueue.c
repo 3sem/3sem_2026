@@ -1,9 +1,8 @@
 #ifdef SYS_V_QUEUE
-#include "include.h"
+
+#include "sys_v_queue.h"
 
 void start_parent(sys_v_queue_t *sys_v_queue, buffer_t *buffer){
-    fprintf(stderr, "start parent\n");
-
     int output_fd = open(destination, O_WRONLY | O_CREAT | O_EXCL, 0644);
     if (output_fd == -1) {
         perror("open source error");
@@ -15,7 +14,6 @@ void start_parent(sys_v_queue_t *sys_v_queue, buffer_t *buffer){
  
         buffer->actions->read_from_buffer(buffer, output_fd);
     }
-    fprintf(stderr, "0");
 
     close(output_fd);
 }
@@ -26,7 +24,6 @@ void start_child(sys_v_queue_t *sys_v_queue, buffer_t *buffer){
         perror("open source error");
         return;
     }
-    fprintf(stderr, "start child\n");
 
     while ((buffer->actions->write_in_buffer(buffer, input_fd)) > 0){
         sys_v_queue->sys_v_queue_ops.write_in_sys_v_queue(sys_v_queue, buffer, 1);

@@ -7,7 +7,7 @@ duplex_ch_t *create_channel(){
         perror("Memory error");
         return NULL;    
     }
-
+//VFS CONTAINER
     if (pipe(duplex_ch->pipe_direct)){
         perror("Pipe direct error");
         free(duplex_ch);
