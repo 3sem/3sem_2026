@@ -2,7 +2,7 @@ CC = gcc
 
 DIRSOURCE       = Source
 CFLAGSH         = -IInclude -DSYS_V_QUEUE
-#-DSYS_V_QUEUE
+#-
 SOURCES         = $(wildcard $(DIRSOURCE)/*.c)
 OBJECTS         = $(patsubst %.c, %.o, $(SOURCES))
 
@@ -20,15 +20,25 @@ $(OBJECTS): %.o: %.c
 	$(CC) $(CFLAGSH) -c $^ -o ./$(DIR_BUILD)/$@
 
 make_folder:
-	#time dd if=/dev/urandom of=Source.txt bs=1048576 count=4096
 	mkdir -p $(DIR_BUILD)/$(DIRSOURCE)/
 
 start:
-	rm -f Destination.txt
-	./$(DIR_BUILD)/$(EXECUTABLE_NAME)
+	sudo cpupower frequency-set -g performance > /dev/null
+	dd if=/dev/urandom of=Source.txt bs=1048576 count=64
 
-start_val:
-	valgrind ./$(DIR_BUILD)/$(EXECUTABLE_NAME) -Wall -Wallstring
+
+	sleep 1
+
+	@for i in 1 2 3 4 5 6 7; do \
+		rm -f Destination.txt; \
+		sync; \
+		sleep 1; \
+		cat Source.txt > /dev/null; \
+		./$(DIR_BUILD)/$(EXECUTABLE_NAME) 2>&1 | grep sec >> out.txt; \
+	done
+
+	sudo cpupower frequency-set -g powersave > /dev/null
+
 
 clean:
 	rm -rf ./$(DIR_BUILD)/

@@ -30,7 +30,7 @@ ch_t *create_channel (const char *fifo_path);
 void  destroy_channel(ch_t *ch);
 
 
-void start_parent(ch_t *duplex_ch, buffer_t *buffer); //fifo
+void start_parent(ch_t *duplex_ch, buffer_t *buffer);
 void start_child (ch_t *duplex_ch, buffer_t *buffer);
 
 #endif
