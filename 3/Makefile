@@ -2,7 +2,10 @@ CC = gcc
 
 DIRSOURCE       = Source
 CFLAGSH         = -IInclude -DSYS_V_QUEUE
-#-
+# SYS_V_QUEUE запуск очереди сообщений
+# SHM запуск разделяемой памяти
+# FIFO запуск FIFO
+
 SOURCES         = $(wildcard $(DIRSOURCE)/*.c)
 OBJECTS         = $(patsubst %.c, %.o, $(SOURCES))
 
@@ -22,7 +25,9 @@ $(OBJECTS): %.o: %.c
 make_folder:
 	mkdir -p $(DIR_BUILD)/$(DIRSOURCE)/
 
-start:
+# результаты будут в out.txt
+start_time_test: 
+	touch out.txt
 	sudo cpupower frequency-set -g performance > /dev/null
 	dd if=/dev/urandom of=Source.txt bs=1048576 count=64
 
@@ -39,6 +44,8 @@ start:
 
 	sudo cpupower frequency-set -g powersave > /dev/null
 
+start:
+	./$(DIR_BUILD)/$(EXECUTABLE_NAME)
 
 clean:
 	rm -rf ./$(DIR_BUILD)/
