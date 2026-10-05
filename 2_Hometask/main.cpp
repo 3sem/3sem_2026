@@ -18,7 +18,7 @@ int main (void) {
     }
 
     int isChild = duplex->pid == 0;
-    int result = isChild ? childEcho(duplex->child) : parentEcho(duplex->parent);
+    int result = isChild ? childEcho(duplex) : parentEcho(duplex);
 
     duplexDtor(duplex);
 
