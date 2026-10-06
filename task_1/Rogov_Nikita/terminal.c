@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <glob.h>
 
 int main() {
     while (1) {
@@ -101,7 +102,16 @@ int main() {
                     close(fd[0]);
                 }
 
-                execvp(args[0], args);
+                glob_t g;
+                for (int j = 0; j < arg_count; j++) {
+                    int flags = GLOB_NOCHECK;
+                    if (j > 0) {
+                        flags |= GLOB_APPEND;
+                    }
+                    glob(args[j], flags, NULL, &g);
+                }
+                execvp(g.gl_pathv[0], g.gl_pathv);
+
                 perror("execvp error");
                 exit(1);
             }
