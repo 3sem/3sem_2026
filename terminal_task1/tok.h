@@ -2,4 +2,4 @@
 #include <stdlib.h>
 #include <string.h>
 
-int tok (char* str, char token, char** array_ptr);
+char*** tok (char* str);

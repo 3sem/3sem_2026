@@ -1,6 +1,6 @@
 #ifndef EXECUTE_H
 #define EXECUTE_H
 
-void execute (char** array_ptr, int num_str);
+void execute (char*** array_ptr);
 
 #endif
