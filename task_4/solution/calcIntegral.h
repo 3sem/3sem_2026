@@ -3,6 +3,6 @@
 
 #include "expression.h"
 
-double integrateMonteCarlo(expressionTree_t* expression);
+double* integrateMonteCarlo(expressionTree_t* expression, double* borders, int nThreads);
 
 #endif /* CALC_INTEGRAL_H */

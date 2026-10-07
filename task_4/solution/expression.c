@@ -49,6 +49,54 @@ double evaluateExpression(const expressionTree_t* expressionTree, double x)
     return evaluateNode(expressionTree->tree.root, x);
 }
 
+expressionRange_t estimateExpressionRange(const expressionTree_t* expressionTree,
+                                          const double borders[2])
+{
+    const expressionRange_t invalid = {NAN, NAN};
+    const unsigned int intervals = 100000;
+
+    if (expressionTree == NULL || expressionTree->tree.root == NULL ||
+        borders == NULL || !isfinite(borders[0]) || !isfinite(borders[1]) ||
+        borders[0] > borders[1])
+    {
+        return invalid;
+    }
+
+    double first = evaluateExpression(expressionTree, borders[0]);
+    if (!isfinite(first))
+    {
+        return invalid;
+    }
+
+    expressionRange_t range = {first, first};
+    if (borders[0] == borders[1])
+    {
+        return range;
+    }
+
+    for (unsigned int i = 1; i <= intervals; ++i)
+    {
+        double t = (double)i / intervals;
+        /* Weighted interpolation avoids overflow in borders[1] - borders[0]. */
+        double x = i == intervals ? borders[1]
+                                 : (1.0 - t) * borders[0] + t * borders[1];
+        double value = evaluateExpression(expressionTree, x);
+        if (!isfinite(value))
+        {
+            return invalid;
+        }
+        if (value < range.min)
+        {
+            range.min = value;
+        }
+        if (value > range.max)
+        {
+            range.max = value;
+        }
+    }
+    return range;
+}
+
 treeNode_t* createExpressionNode(expressionNodeType_t type, double value,
                                  treeNode_t* left, treeNode_t* right)
 {
