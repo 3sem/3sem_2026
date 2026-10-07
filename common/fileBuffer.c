@@ -2,41 +2,58 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 int readFileBuffer(const char* fileName, FileBuffer* buffer)
 {
     assert( fileName);
     assert( buffer);
-    assert( !buffer->data && buffer->size == 0);
+    assert( !buffer->data && buffer->size == 0 && !buffer->isMapped);
 
-    FILE* file = fopen( fileName, "rb");
-    assert(file);
+    int fd = open(fileName, O_RDONLY);
+    if(fd == -1){
+        perror("file open");
+        return -1;
+    }
 
     struct stat fileInfo = {0};
-    if(fstat(fileno(file), &fileInfo) != 0){
+    if(fstat(fd, &fileInfo) != 0){
         perror("file size");
-        fclose(file);
+        close(fd);
         return -1;
     }
 
-    buffer->size = (size_t) fileInfo.st_size;
-
-    buffer->data = (char*) malloc(buffer->size ? buffer->size : 1);
-    assert(buffer->data);
-
-    if( fread( buffer->data, 1, buffer->size, file) != buffer->size )
-    {
-        printf("File not read!\n");
-        freeFileBuffer(buffer);
-        fclose(file);
+    if(fileInfo.st_size < 0 || (uintmax_t)fileInfo.st_size > SIZE_MAX){
+        fprintf(stderr, "File is too large\n");
+        close(fd);
         return -1;
     }
 
-    fclose(file);
+    size_t fileSize = (size_t)fileInfo.st_size;
+    if(fileSize == 0){
+        close(fd);
+        return 0;
+    }
+
+    void* mapping = mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
+    int mmapError = errno;
+    close(fd);
+
+    if(mapping == MAP_FAILED){
+        errno = mmapError;
+        perror("file mmap");
+        return -1;
+    }
+
+    buffer->data = mapping;
+    buffer->size = fileSize;
+    buffer->isMapped = true;
     return 0;
 }
 
@@ -79,15 +96,25 @@ int reallocFileBuffer(FileBuffer* buffer, size_t newSize)
         return 0;
     }
 
-    // printf("newSize = %lu\n", newSize);
-    char* newData = realloc(buffer->data, newSize);
+    if (buffer->isMapped) {
+        fprintf(stderr, "Cannot resize a memory-mapped file buffer\n");
+        return -1;
+    }
+
+    size_t allocationSize = newSize;
+    if (buffer->size > 0 && buffer->size <= SIZE_MAX / 2) {
+        size_t doubledSize = buffer->size * 2;
+        if (doubledSize > allocationSize) allocationSize = doubledSize;
+    }
+
+    char* newData = realloc(buffer->data, allocationSize);
     if (!newData) {
         perror("buffer realloc");
         return -1;
     }
 
     buffer->data = newData;
-    buffer->size = newSize;
+    buffer->size = allocationSize;
     return 0;
 }
 
@@ -95,7 +122,13 @@ void freeFileBuffer(FileBuffer* buffer)
 {
     assert(buffer);
 
-    free(buffer->data);
+    if(buffer->isMapped){
+        if(munmap(buffer->data, buffer->size) == -1) perror("file munmap");
+    } else {
+        free(buffer->data);
+    }
+
     buffer->data = NULL;
     buffer->size = 0;
+    buffer->isMapped = false;
 }
