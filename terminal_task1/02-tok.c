@@ -34,8 +34,4 @@ char*** tok (char* str)
     
 
     return array_ptr;
-    //printf ("%s\n", array_ptr [0][1]);
-    //free (array_ptr[0]);
-    //free (array_ptr[1]);
-    //free (array_ptr);
 }
