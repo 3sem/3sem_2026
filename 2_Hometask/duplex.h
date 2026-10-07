@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-const size_t BUF_SIZE = 64 * 1024;
+static const size_t BUF_SIZE = 64 * 1024;
 
 typedef struct duplex_t duplex_t;
 

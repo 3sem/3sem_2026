@@ -138,11 +138,11 @@ int duplexWrite(duplex_t* duplex, const char* buf, size_t size) {
 void duplexFinishWrite(duplex_t* duplex) {
     assert(duplex);
 
-    int fd = duplex->pid == 0
-        ? duplex->toParent[1]
-        : duplex->toChild[1];
+    int* fd = duplex->pid == 0
+        ? &duplex->toParent[1]
+        : &duplex->toChild[1];
 
-    closeFd(&fd);
+    closeFd(fd);
 }
 
 int duplexExchange(duplex_t* duplex, char* buf, size_t size, int lastBlock) {

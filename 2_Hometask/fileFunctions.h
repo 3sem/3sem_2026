@@ -1,7 +1,7 @@
 #ifndef FILE_FUNCTIONS_H
 #define FILE_FUNCTIONS_H
 
-const int INIT_FD = -1;
+static const int INIT_FD = -1;
 
 void closeFd(int* fd);
 

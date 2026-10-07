@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
+#include <glob.h>
 
 #include "input.h"
 
@@ -44,8 +45,12 @@ void inputCleanup(input_t *input) {
         return;
 
     if (input->tokens != NULL) {
-        for (size_t i = 0; input->tokens[i]; ++i)
+        for (size_t i = 0; input->tokens[i]; ++i) {
+            for (size_t j = 0; input->tokens[i][j]; ++j)
+                free(input->tokens[i][j]);
+
             free(input->tokens[i]);
+        }
 
         free(input->tokens);
     }
@@ -84,6 +89,41 @@ char** getCommands (input_t *input) {
     return commands;
 }
 
+int addToken(char*** tokens, size_t* tokenCount, const char* token) {
+    glob_t matches = {};
+
+    if (glob(token, GLOB_NOCHECK, NULL, &matches) != 0) {
+        fprintf(stderr, "glob failed\n");
+        globfree(&matches);
+        return -1;
+    }
+
+    size_t capacity = *tokenCount + matches.gl_pathc + 1;
+    char** expanded = (char**)realloc(*tokens, capacity * sizeof(*expanded));
+
+    if (!expanded) {
+        perror("realloc");
+        globfree(&matches);
+        return -1;
+    }
+
+    *tokens = expanded;
+
+    for (size_t i = 0; i < matches.gl_pathc; ++i) {
+        expanded[*tokenCount] = strdup(matches.gl_pathv[i]);
+        if (!expanded[*tokenCount]) {
+            perror("strdup");
+            globfree(&matches);
+            return -1;
+        }
+
+        expanded[++(*tokenCount)] = NULL;
+    }
+
+    globfree(&matches);
+    return 0;
+}
+
 int getTokens(input_t * input, char** commands) {
     assert(input);
     assert(commands);
@@ -115,7 +155,9 @@ int getTokens(input_t * input, char** commands) {
         char *curTok = strtok(commands[curCmdIndex], tokensDelim);
 
         while (curTok != NULL) {
-            input->tokens[curCmdIndex][tokNum++] = curTok;
+            if (addToken(&input->tokens[curCmdIndex], &tokNum, curTok) == -1)
+                return -1;
+
             curTok = strtok(NULL, tokensDelim);
         }
 
