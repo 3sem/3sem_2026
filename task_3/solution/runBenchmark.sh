@@ -6,8 +6,15 @@ export LC_ALL=C
 
 repetitions=${1-10}
 file_size=${2-67108864}
-if [[ $# -gt 2 || ! $repetitions =~ ^[1-9][0-9]*$ || ! $file_size =~ ^[1-9][0-9]*$ ]]; then
-    echo "Usage: $0 [positive_repetition_count] [fixed_file_size_in_bytes]" >&2
+if [[ $# -gt 2 || ! $repetitions =~ ^[1-9][0-9]*$ ]]; then
+    echo "Usage: $0 [positive_repetition_count] [file_size: bytes or K/M/G, e.g. 4G]" >&2
+    exit 1
+fi
+
+# GNU numfmt converts binary suffixes: 1K = 1024 bytes, 1G = 1024^3 bytes.
+if ! file_size=$(numfmt --from=iec -- "$file_size") ||
+   [[ ! $file_size =~ ^[1-9][0-9]*$ ]]; then
+    echo "File size must be positive: bytes or K/M/G (e.g. 4G)." >&2
     exit 1
 fi
 
@@ -83,7 +90,7 @@ run_transfer(){
         wait_for_sender "$transfer_mode" || return 1
     fi
 
-    timeout 30s bash ./transfer.sh "$transfer_mode" read --chunk-size "$chunk_size" --no-prepare --no-check \
+    timeout "${BENCHMARK_TIMEOUT:-300s}" bash ./transfer.sh "$transfer_mode" read --chunk-size "$chunk_size" --no-prepare --no-check \
         > "$result_dir/reader.log" 2>&1 &
     reader_pid=$!
 
