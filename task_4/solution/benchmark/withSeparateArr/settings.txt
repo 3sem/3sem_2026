@@ -1,0 +1,6 @@
+expression=x*x
+interval=[0,2]
+logical_cpus=4
+physical_cores=4
+max_threads=100000
+repetitions=10
