@@ -233,3 +233,33 @@ int shMemRead(key_t key, FileBuffer* buffer, size_t chunkSize){
     detachSharedMemory(msg);
     return result;
 }
+
+int shMemSendString(key_t key, const char* string, size_t chunkSize){
+    if(string == NULL || chunkSize == 0){
+        errno = EINVAL;
+        return -1;
+    }
+
+    FileBuffer buffer = {0};
+    int result = writeStringFileBuffer(&buffer, string);
+    if(result == 0) result = shMemSend(key, &buffer, chunkSize);
+    int savedError = errno;
+    freeFileBuffer(&buffer);
+    errno = savedError;
+    return result;
+}
+
+int shMemReadString(key_t key, char* string, size_t stringSize, size_t chunkSize){
+    if(string == NULL || stringSize == 0 || chunkSize == 0){
+        errno = EINVAL;
+        return -1;
+    }
+
+    FileBuffer buffer = {0};
+    int result = shMemRead(key, &buffer, chunkSize);
+    if(result == 0) result = readStringFileBuffer(&buffer, string, stringSize);
+    int savedError = errno;
+    freeFileBuffer(&buffer);
+    errno = savedError;
+    return result;
+}

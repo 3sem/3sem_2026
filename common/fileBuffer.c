@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -83,6 +84,47 @@ int writeFileBuffer(const char* fileName, const FileBuffer* buffer)
         return -1;
     }
 
+    return 0;
+}
+
+int writeStringFileBuffer(FileBuffer* buffer, const char* string)
+{
+    if(buffer == NULL || string == NULL || buffer->isMapped){
+        errno = EINVAL;
+        return -1;
+    }
+
+    size_t length = strlen(string);
+    if(length == SIZE_MAX){
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    /* Copy before freeing: string may point into the current buffer. */
+    char* data = malloc(length + 1);
+    if(data == NULL) return -1;
+    memcpy(data, string, length + 1);
+
+    free(buffer->data);
+    buffer->data = data;
+    buffer->size = length;
+    return 0;
+}
+
+int readStringFileBuffer(const FileBuffer* buffer, char* string, size_t stringSize)
+{
+    if(buffer == NULL || string == NULL ||
+       (buffer->data == NULL && buffer->size != 0)){
+        errno = EINVAL;
+        return -1;
+    }
+    if(stringSize <= buffer->size){
+        errno = ENOBUFS;
+        return -1;
+    }
+
+    if(buffer->size != 0) memmove(string, buffer->data, buffer->size);
+    string[buffer->size] = '\0';
     return 0;
 }
 
