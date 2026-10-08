@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(integralCalculator LANGUAGES C)
 
+find_package(Threads REQUIRED)
+
 add_library(expressionParser STATIC
     parser.c
     expression.c
@@ -16,7 +18,7 @@ add_executable(integralCalculator
     calcIntegral.c
 )
 
-target_link_libraries(integralCalculator PRIVATE expressionParser)
+target_link_libraries(integralCalculator PRIVATE expressionParser Threads::Threads)
 
 if(MSVC)
     target_compile_options(expressionParser PRIVATE /W4)
