@@ -39,4 +39,9 @@ endif()
 
 if(UNIX)
     target_link_libraries(expressionParser PUBLIC m)
+
+    add_executable(benchmarkIntegral benchmark.c calcIntegral.c)
+    target_link_libraries(benchmarkIntegral PRIVATE expressionParser Threads::Threads)
+    target_compile_definitions(benchmarkIntegral PRIVATE _POSIX_C_SOURCE=200809L)
+    target_compile_options(benchmarkIntegral PRIVATE -Wall -Wextra -Wpedantic)
 endif()
