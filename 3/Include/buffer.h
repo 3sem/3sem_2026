@@ -13,19 +13,26 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define KB * (1 << 10)
+#define MB * (1 << 20)
+
 static const char source[]      = "Source.txt";
 static const char destination[] = "Destination.txt";
 
 #if defined(SYS_V_QUEUE)
-#define MAX_SYS_V_SIZE 8192
-#define MAX_BUF_SIZE   MAX_SYS_V_SIZE
+    #define MAX_SYS_V_SIZE (64 KB) 
+    #define MAX_BUF_SIZE   MAX_SYS_V_SIZE
 
 #elif defined(FIFO)
-#define MAX_BUF_SIZE   65536
+    #define MAX_BUF_SIZE   (8 KB)
+
+#elif defined(SHM)
+    #define MAX_BUF_SIZE   (32 MB)
 
 #else
-#define MAX_BUF_SIZE   16777216
+    #error "Define one of: SYS_V_QUEUE, FIFO, SHM"
 #endif
+
 
 typedef struct Buffer buffer_t;
 

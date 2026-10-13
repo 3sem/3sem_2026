@@ -1,11 +1,14 @@
 #if defined(SYS_V_QUEUE)
-#include "sys_v_queue.h"
+    #include "sys_v_queue.h"
 
 #elif defined(FIFO)
-#include "FIFO.h"
+    #include "FIFO.h"
 
 #elif defined(SHM)
-#include "shm.h"
+    #include "shm.h"
+
+    #else
+    #error "Define one of: SYS_V_QUEUE, FIFO, SHM"
 #endif
 
 #include <time.h>
