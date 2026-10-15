@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE
+
 #include "generator.h"
 #include "common.h"
 
@@ -24,13 +26,18 @@ void* generatePoints(void* args) {
     size_t numOfThreads = threadArgs.numOfThreads;
     double xOffset = threadArgs.xOffset;
 
+    struct drand48_data state = {0};
+    srand48_r(threadArgs.seed, &state);
+
     int numOfPoints = NUM_OF_POINTS / numOfThreads;
     int numPointsBelowGraph = 0;
 
     for (int i = 0; i < numOfPoints; i++) {
-        double x = (double)rand() / RAND_MAX / (double)numOfThreads
-                 + xOffset;
-        double y = (double)rand() / RAND_MAX;
+        double u, y;
+        drand48_r(&state, &u);
+        drand48_r(&state, &y);
+
+        double x = u / (double)numOfThreads + xOffset;
 
         if (y - integrableFunc(x) < 0) {
             numPointsBelowGraph++;
@@ -104,7 +111,8 @@ size_t createThreads(pthread_t* tidArr, threadArgs_t* threadArgs,
             .numOfThreads = numOfThreads,
             .xOffset = curThreadXOffset,
             .sumPointsBelowGraph = sumPointsBelowGraph,
-            .mutex = mutex
+            .mutex = mutex,
+            .seed = (long)created + 1
         };
 
         int error = pthread_create(&tidArr[created], NULL,

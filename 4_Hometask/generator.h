@@ -10,6 +10,7 @@ typedef struct threadArgs_t {
     double xOffset;
     int* sumPointsBelowGraph;
     pthread_mutex_t* mutex;
+    long seed;
 } threadArgs_t;
 
 double integrableFunc(double x);
