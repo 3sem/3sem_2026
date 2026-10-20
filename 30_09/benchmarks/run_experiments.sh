@@ -46,14 +46,19 @@ fi
 if [[ -n "${THREAD_COUNTS:-}" ]]; then
     read -r -a THREADS <<< "$THREAD_COUNTS"
 else
-    THREADS=(
-        1
-        2
-        4
-        "$PHYSICAL_CORES"
-        "$((PHYSICAL_CORES * 2))"
-        "$((PHYSICAL_CORES * 4))"
-    )
+    THREADS=()
+
+    # Подробно исследуем диапазон от 1 до 32 потоков.
+    for ((n = 1; n <= 32; n += 3)); do
+        THREADS+=("$n")
+    done
+
+    # Затем исследуем степени двойки вплоть до 2^17.
+    MAX_EXPONENT=17
+
+    for ((exponent = 6; exponent <= MAX_EXPONENT; ++exponent)); do
+        THREADS+=("$((1 << exponent))")
+    done
 fi
 
 for threads in "${THREADS[@]}"; do

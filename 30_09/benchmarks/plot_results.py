@@ -53,11 +53,17 @@ def load_samples(path):
 
 
 def configure_thread_axis(axis, thread_counts):
-    """Use log2 spacing while labelling ticks with actual tested thread counts."""
+    """Use a log2 axis and label only powers of two."""
     axis.set_xscale("log", base=2)
-    axis.set_xticks(thread_counts, labels=[str(count) for count in thread_counts])
-    axis.set_xlabel("Number of threads")
 
+    tick_counts = [
+        count
+        for count in thread_counts
+        if (count & (count - 1)) == 0
+    ]
+
+    axis.set_xticks(tick_counts, labels=[str(count) for count in tick_counts])
+    axis.set_xlabel("Number of threads")
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
