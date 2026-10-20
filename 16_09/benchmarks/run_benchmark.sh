@@ -354,8 +354,15 @@ run_transfer() (
             ;;
     esac
 
-    timeout "${TRANSFER_TIMEOUT}s" "$receiver" "$output_file" > receiver.log 2>&1 &
-    receiver_pid=$!
+    if [[ "$mechanism" == "fifo" ]]; then
+        timeout "${TRANSFER_TIMEOUT}s" "$receiver" \
+        "$output_file" "$buffer_size" > receiver.log 2>&1 &
+    else
+        timeout "${TRANSFER_TIMEOUT}s" "$receiver" \
+        "$output_file" > receiver.log 2>&1 &
+    fi
+
+    receiver_pid=$! 
 
     if wait "$receiver_pid"; then
         receiver_pid=""

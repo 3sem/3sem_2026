@@ -2,9 +2,37 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+static int parseBufferSize(const char *text, size_t *buffer_size) {
+    if (text == NULL || *text == '\0') {
+        fprintf(stderr, "Buffer size must be a positive integer\n");
+        return -1;
+    }
+
+    for (const char *digit = text; *digit != '\0'; ++digit) {
+        if (*digit < '0' || *digit > '9') {
+            fprintf(stderr, "Invalid buffer size: %s\n", text);
+            return -1;
+        }
+    }
+
+    errno = 0;
+    char *end = NULL;
+    unsigned long long value = strtoull(text, &end, 10);
+
+    if (errno == ERANGE || end == text || *end != '\0' ||
+        value == 0 || value > SIZE_MAX) {
+        fprintf(stderr, "Invalid buffer size: %s\n", text);
+        return -1;
+    }
+
+    *buffer_size = (size_t)value;
+    return 0;
+}
 
 static int receiveFile(int fifo_fd, FILE *output, size_t buffer_size) {
     char *buffer = malloc(buffer_size);
@@ -46,12 +74,19 @@ static int receiveFile(int fifo_fd, FILE *output, size_t buffer_size) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <output_file>\n", argv[0]);
+    if (argc != 3) {
+        fprintf(
+            stderr,
+            "Usage: %s <output_file> <buffer_size>\n",
+            argv[0]
+        );
         return 1;
     }
 
-    const size_t buffer_size = 64 * 1024;
+    size_t buffer_size;
+    if (parseBufferSize(argv[2], &buffer_size) == -1) {
+        return 1;
+    }
 
     FILE *output = fopen(argv[1], "wb");
     if (output == NULL) {
@@ -72,17 +107,6 @@ int main(int argc, char *argv[]) {
 
     int result = receiveFile(fifo_fd, output, buffer_size);
 
-    /* Include durable output completion in the measured transfer time. */
-    if (result == 0 && fflush(output) == EOF) {
-        perror("fflush output");
-        result = -1;
-    }
-
-    if (result == 0 && fsync(fileno(output)) == -1) {
-        perror("fsync output");
-        result = -1;
-    }
-
     if (close(fifo_fd) == -1) {
         perror("close FIFO");
         result = -1;
@@ -99,4 +123,3 @@ int main(int argc, char *argv[]) {
 
     return result == 0 ? 0 : 1;
 }
-

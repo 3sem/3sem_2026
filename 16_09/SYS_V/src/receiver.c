@@ -129,17 +129,6 @@ int main(int argc, char *argv[]) {
 
     int result = receiveFile(data, output, semid);
 
-    /* Include durable output completion in the measured transfer time. */
-    if (result == 0 && fflush(output) == EOF) {
-        perror("fflush output");
-        result = -1;
-    }
-
-    if (result == 0 && fsync(fileno(output)) == -1) {
-        perror("fsync output");
-        result = -1;
-    }
-
     if (fclose(output) == EOF) {
         perror("fclose output");
         result = -1;

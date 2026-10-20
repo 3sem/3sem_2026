@@ -5,16 +5,22 @@ if(NOT MD5SUM_EXECUTABLE)
     message(FATAL_ERROR "md5sum was not found")
 endif()
 
+get_filename_component(
+    RESULTS_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/../results"
+    ABSOLUTE
+)
+
 add_custom_target(run_benchmarks
     COMMAND bash
-        "${CMAKE_CURRENT_SOURCE_DIR}/run_benchmark.sh"
+        "${CMAKE_CURRENT_SOURCE_DIR}/run_all_benchmarks.sh"
         "$<TARGET_FILE:sender>"
         "$<TARGET_FILE:receiver>"
         "$<TARGET_FILE:queue_sender>"
         "$<TARGET_FILE:queue_receiver>"
         "$<TARGET_FILE:fifo_sender>"
         "$<TARGET_FILE:fifo_receiver>"
-        "${CMAKE_BINARY_DIR}/benchmark-results"
+        "${RESULTS_DIR}"
         "${Python3_EXECUTABLE}"
         "${MD5SUM_EXECUTABLE}"
     DEPENDS
@@ -25,6 +31,6 @@ add_custom_target(run_benchmarks
         fifo_sender
         fifo_receiver
     USES_TERMINAL
-    COMMENT "Running shared-memory, message-queue and FIFO benchmarks"
+    COMMENT "Running all IPC benchmarks and saving results to results/"
     VERBATIM
 )
