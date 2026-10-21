@@ -1,0 +1,40 @@
+{
+  "limits": {
+    "message_limit": 2048,
+    "queue_capacity": 2048,
+    "fifo_capacity": 8192
+  },
+  "cases_per_method": 19,
+  "methods": {
+    "shm": "passed",
+    "mq": "passed",
+    "fifo": "passed"
+  },
+  "large": {
+    "bytes": 4294979641,
+    "input_md5": "581c836714c826616279568e981a1a12",
+    "runs": [
+      {
+        "method": "shm",
+        "bytes": "4294979641",
+        "buffer": "1048576",
+        "seconds": "1.899995000",
+        "output_md5": "581c836714c826616279568e981a1a12"
+      },
+      {
+        "method": "mq",
+        "bytes": "4294979641",
+        "buffer": "1048576",
+        "seconds": "25.080351000",
+        "output_md5": "581c836714c826616279568e981a1a12"
+      },
+      {
+        "method": "fifo",
+        "bytes": "4294979641",
+        "buffer": "1048576",
+        "seconds": "2.583156000",
+        "output_md5": "581c836714c826616279568e981a1a12"
+      }
+    ]
+  }
+}

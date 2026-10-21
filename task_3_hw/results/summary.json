@@ -1,0 +1,74 @@
+[
+  {
+    "method": "shm",
+    "buffer_bytes": 2048,
+    "median_seconds": 0.508969,
+    "min_seconds": 0.477417,
+    "max_seconds": 0.519991,
+    "repeats": 5
+  },
+  {
+    "method": "shm",
+    "buffer_bytes": 8192,
+    "median_seconds": 0.138027,
+    "min_seconds": 0.128047,
+    "max_seconds": 0.179766,
+    "repeats": 5
+  },
+  {
+    "method": "shm",
+    "buffer_bytes": 1048576,
+    "median_seconds": 0.076182,
+    "min_seconds": 0.052719,
+    "max_seconds": 0.082894,
+    "repeats": 5
+  },
+  {
+    "method": "mq",
+    "buffer_bytes": 2048,
+    "median_seconds": 1.837576,
+    "min_seconds": 1.80612,
+    "max_seconds": 1.853942,
+    "repeats": 5
+  },
+  {
+    "method": "mq",
+    "buffer_bytes": 8192,
+    "median_seconds": 1.678811,
+    "min_seconds": 1.627383,
+    "max_seconds": 1.689168,
+    "repeats": 5
+  },
+  {
+    "method": "mq",
+    "buffer_bytes": 1048576,
+    "median_seconds": 1.571807,
+    "min_seconds": 1.555655,
+    "max_seconds": 1.581193,
+    "repeats": 5
+  },
+  {
+    "method": "fifo",
+    "buffer_bytes": 2048,
+    "median_seconds": 0.273534,
+    "min_seconds": 0.270741,
+    "max_seconds": 0.287246,
+    "repeats": 5
+  },
+  {
+    "method": "fifo",
+    "buffer_bytes": 8192,
+    "median_seconds": 0.112755,
+    "min_seconds": 0.110288,
+    "max_seconds": 0.129002,
+    "repeats": 5
+  },
+  {
+    "method": "fifo",
+    "buffer_bytes": 1048576,
+    "median_seconds": 0.176141,
+    "min_seconds": 0.146456,
+    "max_seconds": 0.180158,
+    "repeats": 5
+  }
+]
