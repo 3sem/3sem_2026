@@ -24,7 +24,7 @@ static const char destination[] = "Destination.txt";
 typedef struct Buffer buffer_t;
 
 typedef struct {
-    ssize_t (*put_num_in_buf )(buffer_t *self, int num);
+    ssize_t (*put_num_in_buf )(buffer_t *self, int num, int id);
 } BufferOps;
 
 struct Buffer{
@@ -34,7 +34,7 @@ struct Buffer{
     const BufferOps *actions;
 };
 
-ssize_t put_num_in_buf (buffer_t *buffer, int output_fd);
+ssize_t put_num_in_buf (buffer_t *buffer, int output_fd, int id);
 
 static const BufferOps default_buf_ops = {
     .put_num_in_buf = put_num_in_buf,

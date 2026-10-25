@@ -10,15 +10,17 @@
 #include "shm.h"
 #include "int.h"
 
-#define PTHREADS_NUM      16
-#define POINTS_IN_PTHREAD 100000
+#define PTHREADS_NUM      100
+
+#define POINTS_NUM        (16000000)
+#define POINTS_IN_PTHREAD (POINTS_NUM / PTHREADS_NUM)
 
 typedef struct {
     points_params_t points;
     func_t user_func;
     sem_t *sem;
     shm_t *shm;
-    int    cpu_id;
+    int    pthread_id;
 } thread_args_t;
 
 static const int max_cpu = 16;

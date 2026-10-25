@@ -52,9 +52,10 @@ int main() {
 
 int read_results(sem_t *sem, shm_t *shm){
     int num = 0;
+    sem->sem_ops->wait_reader(sem);
+
 
     for (int test_num = 0; test_num < PTHREADS_NUM; test_num++){
-        sem->sem_ops->wait_reader(sem);
         num += shm->buffer->buffer[test_num];
     }
 
@@ -74,7 +75,7 @@ int create_pthreads(sem_t *sem, shm_t *shm){
         args->user_func     = int_func;
         args->sem           = sem;
         args->shm           = shm;
-        args->cpu_id        = pthread_id % max_cpu;
+        args->pthread_id    = pthread_id;
         
         if (pthread_create(&pthreads[pthread_id], NULL, check_points_set, args) != 0) {
             perror("pthread_create failed");
@@ -88,6 +89,7 @@ int create_pthreads(sem_t *sem, shm_t *shm){
             perror("pthread_join failed");
         }
     }
+    sem->sem_ops->open_reader(sem);
 
 
     return 0;
@@ -99,18 +101,15 @@ void *check_points_set(void *thread_args){
     cpu_set_t cpuset;
     
     CPU_ZERO(&cpuset);
-    CPU_SET(args->cpu_id, &cpuset);
+    CPU_SET(args->pthread_id % max_cpu, &cpuset);
     pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
     int num;
-    if ((num = check_points(args->points, args->user_func)) == -1) return 0;
+    if ((num = check_points(args->points, args->user_func, args->pthread_id)) == -1) return 0;
 
-    args->sem->sem_ops->wait_writer(args->sem);
-    args->shm->buffer->actions->put_num_in_buf(args->shm->buffer, num);
-    args->sem->sem_ops->open_reader(args->sem);
-    args->sem->sem_ops->open_writer(args->sem);
+    args->shm->buffer->actions->put_num_in_buf(args->shm->buffer, num, args->pthread_id);
 
-    //printf("%d: \t%d\n", args->cpu_id, num);
+    //printf("%d: \t%d\n", args->pthread_id, num);
 
     free(args);
 

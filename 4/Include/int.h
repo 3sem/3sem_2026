@@ -22,7 +22,7 @@ static const points_params_t default_points_param = {
     .ymin = 0,
 };
 
-int check_points(points_params_t points, func_t func);
+int check_points(points_params_t points, func_t func, int int_seed);
 
 double int_func(double x);
 #endif

@@ -20,13 +20,12 @@ void destroy_buffer(buffer_t *buf){
     return;
 }
 
-ssize_t put_num_in_buf(buffer_t *buffer, int num){
+ssize_t put_num_in_buf(buffer_t *buffer, int num, int id){
     if (!buffer || buffer->size == buffer->capacity){
         return -1;
     }
 
-    buffer->buffer[buffer->size] = num;
-    buffer->size++;
+    buffer->buffer[id] = num;
 
-    return buffer->size;
+    return 0;
 }
