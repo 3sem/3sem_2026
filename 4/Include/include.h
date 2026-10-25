@@ -10,8 +10,7 @@
 #include "shm.h"
 #include "int.h"
 
-#define PTHREADS_NUM      100
-
+#define PTHREADS_NUM      16
 #define POINTS_NUM        (16000000)
 #define POINTS_IN_PTHREAD (POINTS_NUM / PTHREADS_NUM)
 

@@ -109,7 +109,7 @@ void *check_points_set(void *thread_args){
 
     args->shm->buffer->actions->put_num_in_buf(args->shm->buffer, num, args->pthread_id);
 
-    //printf("%d: \t%d\n", args->pthread_id, num);
+    printf("%d: \t%d\n", args->pthread_id, num);
 
     free(args);
 
