@@ -1,0 +1,11 @@
+*.o
+*.out
+*.exe
+a.out
+build/
+*.log
+*.tmp
+child.txt
+parent.txt
+*.swp
+*~
