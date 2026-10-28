@@ -1,0 +1,30 @@
+{
+  "timestamp_utc": "2026-10-21T09:12:24.159650+00:00",
+  "system": "Darwin",
+  "release": "25.6.0",
+  "machine": "arm64",
+  "macos_version": "26.6.2",
+  "cpu_count": 10,
+  "python": "3.13.5",
+  "compiler": "Apple clang version 17.0.0 (clang-1700.4.4.1)",
+  "limits": {
+    "message_limit": 2048,
+    "queue_capacity": 2048,
+    "fifo_capacity": 8192
+  },
+  "buffer_sizes": [
+    2048,
+    8192,
+    1048576
+  ],
+  "file_bytes": 268435579,
+  "input_md5": "28d7fa8e9fb13ddec3caf9aa9f65bd99",
+  "checksum_tool": "md5sum",
+  "input_kind": "os.urandom, non-sparse",
+  "repeats": 5,
+  "warmups_per_combination": 1,
+  "shuffle_seed": 20261021,
+  "timing": "CLOCK_MONOTONIC: before fork through receiver close and waitpid; no fsync",
+  "cache_policy": "warm input; MD5 and generation outside timing; no cache flush",
+  "storage": "temporary directory on the host filesystem"
+}
