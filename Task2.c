@@ -113,7 +113,7 @@ int dpx_init(Duplex *d) {
     return 0;
 }
 
-int copy_via_child(void) {
+int copy_via_child(const char *in_filename, const char *out_filename) {
     Duplex chan;
 
     if (dpx_init(&chan) == -1) {
@@ -133,8 +133,8 @@ int copy_via_child(void) {
             return -1;
         }
 
-        int src = open("input.txt", O_RDONLY);
-        int dst = open("output.txt",
+        int src = open(in_filename, O_RDONLY);
+        int dst = open(out_filename,
                        O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
         if (src == -1 || dst == -1) {
@@ -241,6 +241,10 @@ int copy_via_child(void) {
     return 0;
 }
 
-int main(void) {
-    return copy_via_child();
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Использование: %s <входной_файл> <выходной_файл>\n", argv[0]);
+        return 1;
+    }
+    return copy_via_child(argv[1], argv[2]);
 }
