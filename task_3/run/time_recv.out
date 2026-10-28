@@ -1,0 +1,4 @@
+method shm
+bufsize 65536
+bytes 268435456
+seconds 0.097930030
