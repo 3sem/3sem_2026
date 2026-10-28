@@ -8,7 +8,7 @@
 #include <time.h>
 #include "shared_data.h"
 
-inline double f(double x) { 
+static double f(double x) { 
     return x * x * x; 
 }
 
@@ -21,6 +21,18 @@ struct ThreadArgs {
 void* worker(void* arg) {
     struct ThreadArgs* args = (struct ThreadArgs*)arg;
     
+    // (CPU AFFINITY)
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    
+    long num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (num_cores <= 0) num_cores = 1;
+
+    CPU_SET(args->thread_id % num_cores, &cpuset); 
+    
+    pthread_t current_thread = pthread_self();
+    pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
+
     struct drand48_data rand_buffer;
     unsigned short xsubi[3];
     xsubi[0] = time(NULL) & 0xFFFF;
@@ -43,7 +55,6 @@ void* worker(void* arg) {
         }
     }
 
-    // Запись в персональную ячейку БЕЗ синхронизации
     args->shm_ptr->local_hits[args->thread_id] = local_count;
     return NULL;
 }
@@ -71,7 +82,6 @@ int main(int argc, char* argv[]) {
     struct SharedData* shm_ptr = (struct SharedData*)mmap(0, sizeof(struct SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     long long points_per_thread = N / n;
 
-    // Замер времени
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
