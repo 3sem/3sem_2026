@@ -31,4 +31,5 @@ int release (char *** array_ptr)
         free (array_ptr [i]);
     }
     free (array_ptr);
+    return 0;
 }
