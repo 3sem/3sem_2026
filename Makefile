@@ -1,5 +1,5 @@
 CC       = gcc
-CFLAGS   = -O3 -Wall -Wextra -std=c11
+CFLAGS   = -O3 -Wall -Wextra -std=c11 -pthread
 LIBS     = -lrt -lpthread
 
 DIR_NOSYNC = no_sync
@@ -10,7 +10,6 @@ TARGETS = $(DIR_NOSYNC)/program_A \
           $(DIR_SYNC)/program_A \
           $(DIR_SYNC)/program_B
 
-# По умолчанию собираем все бинарники
 all: $(TARGETS)
 	@echo "Сборка проекта на Си завершена успешно."
 
@@ -26,25 +25,24 @@ $(DIR_SYNC)/program_A: $(DIR_SYNC)/program_A.c $(DIR_SYNC)/shared_data.h
 $(DIR_SYNC)/program_B: $(DIR_SYNC)/program_B.c $(DIR_SYNC)/shared_data.h
 	$(CC) $(CFLAGS) $(DIR_SYNC)/program_B.c -o $(DIR_SYNC)/program_B $(LIBS)
 
-# --- АВТОМАТИЧЕСКИЕ ТЕСТЫ ---
 
-# 1. Тесты без синхронизации (N = 100 000 000)
+#Тесты без синхронизации (N увеличено до 500 000 000)
 test_nosync: $(TARGETS)
 	@killall -9 program_B program_A 2>/dev/null || true
-	@echo "=== ТЕСТЫ БЕЗ СИНХРОНИЗАЦИИ ==="
+	@echo "=== ТЕСТЫ БЕЗ СИНХРОНИЗАЦИИ (N = 500M, CPU Affinity) ==="
 	@for n in 1 2 4 8 16 32; do \
-		sleep 15 | ./$(DIR_NOSYNC)/program_B 100000000 $$n & PID_B=$$!; \
+		sleep 15 | ./$(DIR_NOSYNC)/program_B 500000000 $$n & PID_B=$$!; \
 		sleep 0.4; \
 		echo -n "Потоков $$n: Время = "; \
-		./$(DIR_NOSYNC)/program_A 100000000 $$n; \
+		./$(DIR_NOSYNC)/program_A 500000000 $$n; \
 		kill -9 $$PID_B 2>/dev/null; \
 		wait $$PID_B 2>/dev/null; \
 	done
 
-# 2. Тесты с синхронизацией (N = 10 000 000)
+#Тесты с синхронизацией (оказались не нужными)
 test_sync: $(TARGETS)
 	@killall -9 program_B program_A 2>/dev/null || true
-	@echo "=== ТЕСТЫ С СИНХРОНИЗАЦИЕЙ ==="
+	@echo "=== ТЕСТЫ С СИНХРОНИЗАЦИЕЙ (N = 10M) ==="
 	@for n in 1 2 4 8 16; do \
 		sleep 25 | ./$(DIR_SYNC)/program_B 10000000 $$n & PID_B=$$!; \
 		sleep 0.4; \
@@ -58,4 +56,4 @@ clean:
 	rm -f $(TARGETS)
 	rm -f /dev/shm/mc_shm_nosync /dev/shm/mc_shm_sync
 
-.PHONY: all clean test_nosync test_sync test_all
+.PHONY: all clean test_nosync test_sync
