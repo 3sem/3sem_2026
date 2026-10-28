@@ -9,8 +9,6 @@ void execute (char*** array_ptr)
     int status = 0;
     int fd[2] = {};
     int fd_in = 0;
-    
-    char prefix [10] = "./";
 
     for (int i = 0; array_ptr [i] != NULL; i++)
     {
