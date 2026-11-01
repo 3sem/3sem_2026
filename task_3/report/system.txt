@@ -1,0 +1,6 @@
+msgmax 8192
+msgmnb 16384
+uname Linux 6.12.108-1-MANJARO
+file_bytes 268435456
+taskset receiver cpu 2, sender cpu 3
+PIPE_CAP 65536
