@@ -5,12 +5,27 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <sched.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
 #include "monte_carlo.h"
 
-const size_t TOTAL_POINTS = 10000000;
+static int set_this_thread_to_core(int core_num) {
+    int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (core_num < 0 || core_num >= num_cores) {
+        return -1;
+    }
+
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_num, &cpuset);
+
+    pthread_t current = pthread_self();
+    return pthread_setaffinity_np(current, sizeof(cpu_set_t), &cpuset);
+}
+
+const size_t TOTAL_POINTS = 1000000000;
 
 double ExponentialFunc(double x) {
     return exp(x);
@@ -66,6 +81,10 @@ static void* MonteCarloThread(void *args) {
     assert(args);
 
     struct PthreadData *data = (struct PthreadData*)args;
+    int err = set_this_thread_to_core(data->thread_index % sysconf(_SC_NPROCESSORS_ONLN));
+    if (err != 0) {
+        printf("Failed to set affinity for thread %d\n", data->thread_index);
+    }
     size_t local_count = 0;
 
     /* Локальный ГПСЧ — не мешает другим потокам */
