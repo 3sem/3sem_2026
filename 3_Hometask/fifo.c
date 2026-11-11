@@ -39,6 +39,12 @@ int createFifo(fifo_t* fifo) {
         return -1;
     }
 
+    if (fcntl(fifo->writeFd, F_SETPIPE_SZ, 1048576) == -1) {
+        perror("F_SETPIPE_SZ");
+        removeFifo(fifo);
+        return -1;
+    }
+
     return 0;
 }
 
