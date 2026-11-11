@@ -1,0 +1,6 @@
+/results
+*.bin
+/build
+shm_transfer
+mq_transfer
+fifo_transfer
