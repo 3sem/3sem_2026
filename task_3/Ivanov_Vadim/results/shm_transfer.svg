@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400">
+<rect width="100%" height="100%" fill="white"/>
+<text x="320" y="30" text-anchor="middle" font-size="20">shm_transfer</text>
+<path d="M70 60V325H600" stroke="black" fill="none"/>
+<text x="15" y="55" font-size="14">seconds</text>
+<rect x="120" y="116.30" width="90" height="208.70" fill="#4588bb"/>
+<text x="165" y="106.30" text-anchor="middle" font-size="14">0.448429</text>
+<text x="165" y="350" text-anchor="middle" font-size="14">8192 B</text>
+<rect x="290" y="229.24" width="90" height="95.76" fill="#4588bb"/>
+<text x="335" y="219.24" text-anchor="middle" font-size="14">0.205767</text>
+<text x="335" y="350" text-anchor="middle" font-size="14">65536 B</text>
+<rect x="460" y="247.09" width="90" height="77.91" fill="#4588bb"/>
+<text x="505" y="237.09" text-anchor="middle" font-size="14">0.167414</text>
+<text x="505" y="350" text-anchor="middle" font-size="14">1048576 B</text>
+</svg>
