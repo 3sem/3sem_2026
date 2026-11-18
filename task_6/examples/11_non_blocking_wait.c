@@ -40,7 +40,7 @@ int main(void)
 {
     struct sigaction sa = { .sa_handler = childHandler };
     sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+    sa.sa_flags = SA_RESTART;
     if (sigaction(SIGCHLD, &sa, NULL) == -1) {
         perror("sigaction");
         return EXIT_FAILURE;
