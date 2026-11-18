@@ -12,7 +12,6 @@
 
 static void childHandler(int signum)
 {
-    (void)signum;
     pid_t pid;
     int status;
     char buf[128];
