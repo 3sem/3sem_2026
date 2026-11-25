@@ -18,6 +18,7 @@
 typedef struct {
     Channel *channel;
     int output_fd;
+    char *buffer;
     uint64_t received;
     int error;
 } ReceiveInfo;
@@ -48,11 +49,10 @@ static int write_file(int fd, const void *data, size_t size)
 static void *receive_file(void *arg)
 {
     ReceiveInfo *info = arg;
-    char buffer[BUF_SIZE];
 
     for (;;) {
         ssize_t n = info->channel->ops->receive(
-            info->channel, buffer, sizeof(buffer));
+            info->channel, info->buffer, BUF_SIZE);
 
         if (n == 0)
             break;
@@ -65,7 +65,8 @@ static void *receive_file(void *arg)
 
         info->received += (uint64_t)n;
 
-        if (!info->error && write_file(info->output_fd, buffer, (size_t)n) == -1) {
+        if (!info->error &&
+            write_file(info->output_fd, info->buffer, (size_t)n) == -1) {
             perror("write to output file");
             info->error = 1;
         }
@@ -74,12 +75,10 @@ static void *receive_file(void *arg)
     return NULL;
 }
 
-static int child_work(Channel *channel)
+static int child_work(Channel *channel, char *buffer)
 {
-    char buffer[BUF_SIZE];
-
     for (;;) {
-        ssize_t n = channel->ops->receive(channel, buffer, sizeof(buffer));
+        ssize_t n = channel->ops->receive(channel, buffer, BUF_SIZE);
 
         if (n == 0)
             break;
@@ -127,6 +126,20 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    char *send_buffer = malloc(BUF_SIZE);
+    char *receive_buffer = malloc(BUF_SIZE);
+    char *child_buffer = malloc(BUF_SIZE);
+
+    if (send_buffer == NULL || receive_buffer == NULL || child_buffer == NULL) {
+        perror("malloc");
+        free(send_buffer);
+        free(receive_buffer);
+        free(child_buffer);
+        close(input_fd);
+        close(output_fd);
+        return 1;
+    }
+
     signal(SIGPIPE, SIG_IGN);
 
     Channel parent = {-1, -1, NULL};
@@ -134,6 +147,9 @@ int main(int argc, char **argv)
 
     if (channel_make(&parent, &child) == -1) {
         perror("pipe");
+        free(send_buffer);
+        free(receive_buffer);
+        free(child_buffer);
         close(input_fd);
         close(output_fd);
         return 1;
@@ -145,6 +161,9 @@ int main(int argc, char **argv)
         perror("fork");
         parent.ops->close_all(&parent);
         child.ops->close_all(&child);
+        free(send_buffer);
+        free(receive_buffer);
+        free(child_buffer);
         close(input_fd);
         close(output_fd);
         return 1;
@@ -154,12 +173,16 @@ int main(int argc, char **argv)
         parent.ops->close_all(&parent);
         close(input_fd);
         close(output_fd);
-        _exit(child_work(&child));
+        int result = child_work(&child, child_buffer);
+        free(send_buffer);
+        free(receive_buffer);
+        free(child_buffer);
+        _exit(result);
     }
 
     child.ops->close_all(&child);
 
-    ReceiveInfo info = {&parent, output_fd, 0, 0};
+    ReceiveInfo info = {&parent, output_fd, receive_buffer, 0, 0};
     pthread_t reader;
     int thread_error = pthread_create(&reader, NULL, receive_file, &info);
 
@@ -169,6 +192,9 @@ int main(int argc, char **argv)
         parent.ops->close_all(&parent);
         close(input_fd);
         close(output_fd);
+        free(send_buffer);
+        free(receive_buffer);
+        free(child_buffer);
         waitpid(pid, NULL, 0);
         return 1;
     }
@@ -183,16 +209,18 @@ int main(int argc, char **argv)
         parent.ops->close_all(&parent);
         close(input_fd);
         close(output_fd);
+        free(send_buffer);
+        free(receive_buffer);
+        free(child_buffer);
         waitpid(pid, NULL, 0);
         return 1;
     }
 
-    char buffer[BUF_SIZE];
     uint64_t sent = 0;
     int error = 0;
 
     for (;;) {
-        ssize_t n = read(input_fd, buffer, sizeof(buffer));
+        ssize_t n = read(input_fd, send_buffer, BUF_SIZE);
 
         if (n == 0)
             break;
@@ -205,7 +233,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        if (parent.ops->send(&parent, buffer, (size_t)n) == -1) {
+        if (parent.ops->send(&parent, send_buffer, (size_t)n) == -1) {
             perror("send to child");
             error = 1;
             break;
@@ -260,6 +288,10 @@ int main(int argc, char **argv)
 
     if (!error)
         printf("Transfer time: %.3f seconds\n", seconds_between(start, end));
+
+    free(send_buffer);
+    free(receive_buffer);
+    free(child_buffer);
 
     return error ? 1 : 0;
 }
