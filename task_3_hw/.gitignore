@@ -1,0 +1,9 @@
+/build/
+/shm_transfer
+/mq_transfer
+/fifo_transfer
+/ipc_info
+__pycache__/
+.matplotlib/
+.venv/
+*.bin
