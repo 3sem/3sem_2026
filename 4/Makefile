@@ -33,7 +33,7 @@ start_time_test:
 	rm -f *.txt
 	touch out.txt
 
-	@for i in $$(seq 1 1 20); do \
+	@for i in $$(seq 1 1 100); do \
 		./$(DIR_BUILD)/$(EXECUTABLE_NAME) 2>&1 | grep sec >> out.txt; \
 	done
 
